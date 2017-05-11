@@ -10,6 +10,9 @@ from tracetools.tracetools import trace
 class Message:
     def __init__(self, data=None, header=None):
         if data:
+            """
+            Incoming message
+            """
             self.length = struct.unpack_from("!H", data[:2])[0]
             if(self.length != len(data) - 2):
                 raise ValueError('Expected message of length {0} but actual received message length is {1}'.format(self.length, len(data) - 2))
@@ -18,20 +21,46 @@ class Message:
                 for h, d in zip(header, data[2:]):
                     if h != d:
                         raise ValueError('Invalid header')
+                self.header = header 
+
             if header:
                 self.data = data[2 + len(header) : ]
             else:
                 self.data = data[2:]
+        
+        else:
+            """
+            Outgoing message
+            """
+            self.header = header
+
     
     def get_length(self):
         """
         """
         return self.length
 
+
     def get_data(self):
         """
         """
         return self.data
+
+
+    def set_data(self, data):
+        """
+        """
+        self.data = data
+
+
+    def build(self):
+        """
+        Build the outgoing message
+        """
+        self.length = len(self.header) + len(self.data)
+        
+        return struct.pack("!H", self.length) + self.header + self.data
+
 
 
 
@@ -76,6 +105,9 @@ class HSM:
                     request = Message(data, header=self.header)
 
                     response = struct.pack("!H", len(response)) + self.get_response(request.get_data())
+
+
+
                     conn.send(response)
                     trace('>> {} bytes sent:'.format(len(response)), response)
     
@@ -88,7 +120,6 @@ class HSM:
     def get_diagnostics_data(self):
         lmk_check_value = '1234567890ABCDEF'
         return lmk_check_value + self.firmware_version
-
 
 
     def get_response(self, request):

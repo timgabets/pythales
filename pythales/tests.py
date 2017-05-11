@@ -33,6 +33,11 @@ class TestMessageClass(unittest.TestCase):
         m = Message(data, header)
         self.assertEqual(m.get_data(), b'DATA')
 
+    def test_outgoing_message(self):
+        m = Message(data=None, header=b'XXXX')
+        m.set_data(b'NG007444321')
+        self.assertEqual(m.build(), b'\x00\x0FXXXXNG007444321')
+
 
 class TestHSM(unittest.TestCase):
     def setUp(self):
