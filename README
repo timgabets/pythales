@@ -1,5 +1,5 @@
 pythales
 ========
 
-A primitive implementation of Thales HSM (hardware security module). Only the basic HSM commands are implemented:
-* PIN verification
+A primitive implementation of Thales HSM (hardware security module) simulator. Only the basic HSM commands are implemented:
+* NC - Diagnostics information
