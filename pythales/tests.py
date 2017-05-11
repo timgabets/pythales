@@ -5,6 +5,8 @@ import unittest
 from pythales.hsm import HSM, Message
 
 class TestMessageClass(unittest.TestCase):
+    """
+    """
     def test_get_length(self):
         m = Message(b'\x00\x06SSSS00')
         self.assertEqual(m.get_length(), 6)
@@ -13,6 +15,19 @@ class TestMessageClass(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Expected message of length 6 but actual received message length is 2'):
             m = Message(b'\x00\x0600')
             self.assertEqual(m.get_length(), 6)
+
+
+    def test_invalid_message_header(self):
+        data = b'\x00\x06SSSS00'
+        header = b'XDXD'
+        with self.assertRaisesRegex(ValueError, 'Invalid header'):
+            m = Message(data, header)
+
+    def test_valid_message_header(self):
+        data = b'\x00\x07IDDQD77'
+        header = b'IDDQD'
+        self.assertTrue(Message(data, header))
+
 
 """
 class TestHSM(unittest.TestCase):

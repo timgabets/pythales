@@ -9,11 +9,14 @@ from tracetools.tracetools import trace
 
 class Message:
     def __init__(self, data, header=None):
-        Len = struct.unpack_from("!H", data[:2])[0]
-        if(Len != len(data) - 2):
-            raise ValueError('Expected message of length {0} but actual received message length is {1}'.format(Len, len(data) - 2))
+        self.length = struct.unpack_from("!H", data[:2])[0]
+        if(self.length != len(data) - 2):
+            raise ValueError('Expected message of length {0} but actual received message length is {1}'.format(self.length, len(data) - 2))
 
-        self.length = Len
+        if header:
+            for h, d in zip(header, data[2:]):
+                if h != d:
+                    raise ValueError('Invalid header')
 
     def get_length(self):
         return self.length
