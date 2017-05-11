@@ -11,10 +11,12 @@ class TestMessageClass(unittest.TestCase):
         m = Message(b'\x00\x06SSSS00')
         self.assertEqual(m.get_length(), 6)
 
+
     def test_get_length_incorrect(self):
         with self.assertRaisesRegex(ValueError, 'Expected message of length 6 but actual received message length is 2'):
             m = Message(b'\x00\x0600')
             self.assertEqual(m.get_length(), 6)
+
 
     def test_invalid_message_header(self):
         data = b'\x00\x06SSSS00'
@@ -22,10 +24,12 @@ class TestMessageClass(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Invalid header'):
             m = Message(data, header)
 
+
     def test_valid_message_header(self):
         data = b'\x00\x07IDDQD77'
         header = b'IDDQD'
         self.assertTrue(Message(data, header))
+
 
     def test_get_data(self):
         data = b'\x00\x07HDRDATA'
@@ -33,10 +37,15 @@ class TestMessageClass(unittest.TestCase):
         m = Message(data, header)
         self.assertEqual(m.get_data(), b'DATA')
 
+
     def test_outgoing_message(self):
         m = Message(data=None, header=b'XXXX')
-        m.set_data(b'NG007444321')
-        self.assertEqual(m.build(), b'\x00\x0FXXXXNG007444321')
+        self.assertEqual(m.build(b'NG007444321'), b'\x00\x0FXXXXNG007444321')
+
+
+    def test_outgoing_message_no_header(self):
+        m = Message(data=None, header=None)
+        self.assertEqual(m.build(b'NG007444321'), b'\x00\x0BNG007444321')
 
 
 class TestHSM(unittest.TestCase):

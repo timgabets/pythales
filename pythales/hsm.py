@@ -47,21 +47,14 @@ class Message:
         return self.data
 
 
-    def set_data(self, data):
-        """
-        """
-        self.data = data
-
-
-    def build(self):
+    def build(self, data):
         """
         Build the outgoing message
         """
-        self.length = len(self.header) + len(self.data)
-        
-        return struct.pack("!H", self.length) + self.header + self.data
-
-
+        if self.header:
+            return struct.pack("!H", len(self.header) + len(data)) + self.header + data
+        else:
+            return struct.pack("!H", len(data)) + data
 
 
 class HSM:
@@ -103,12 +96,9 @@ class HSM:
                         continue
 
                     request = Message(data, header=self.header)
-
-                    response = struct.pack("!H", len(response)) + self.get_response(request.get_data())
-
-
-
+                    response = Message(data=None, header=self.header).build(self.get_response(request.get_data()))
                     conn.send(response)
+
                     trace('>> {} bytes sent:'.format(len(response)), response)
     
                 except KeyboardInterrupt:
