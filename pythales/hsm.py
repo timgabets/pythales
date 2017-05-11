@@ -7,6 +7,18 @@ import struct
 
 from tracetools.tracetools import trace
 
+class Message:
+    def __init__(self, data, header=None):
+        Len = struct.unpack_from("!H", data[:2])[0]
+        if(Len != len(data) - 2):
+            raise ValueError('Expected message of length {0} but actual received message length is {1}'.format(Len, len(data) - 2))
+
+        self.length = Len
+
+    def get_length(self):
+        return self.length
+
+
 class HSM:
     def __init__(self, port=None, header=None):
         
@@ -16,9 +28,9 @@ class HSM:
             self.port = 1500
 
         if header:
-            self.header = header
+            self.header = bytes(header, 'utf-8')
         else:
-            self.header = ''
+            self.header = b''
 
     def run(self):
         try:
@@ -36,15 +48,18 @@ class HSM:
 
             while True:
                 try:
-                    request = conn.recv(4096)
-                    trace('<< {} bytes received: '.format(len(request)), request)
+                    data = conn.recv(4096)
+                    trace('<< {} bytes received: '.format(len(data)), data)
                         
-                    Len = struct.unpack_from("!H", request[:2])[0]
-                    if(Len != len(request) - 2):
-                        print("Invalid length {0} - {1}".format(Len, len(request) - 2))
+                    Len = struct.unpack_from("!H", data[:2])[0]
+                    if(Len != len(data) - 2):
+                        print("Invalid length {0} - {1}".format(Len, len(data) - 2))
                         continue
-                    
-                    response = self.get_response(request)
+
+                    request = Message(data, header=self.header)
+
+
+                    response = struct.pack("!H", len(response)) + self.get_response(request[:2])
                     conn.send(response)
                     trace('>> {} bytes sent:'.format(len(response)), response)
     
@@ -54,9 +69,14 @@ class HSM:
                     sys.exit()
     
 
+    def match_header(self):
+        pass
+
     def get_response(self, request):
         response = b'00'
-        return struct.pack("!H", len(response) + len(self.header)) + self.header + response
+
+
+        return self.header + response
 
 
 def show_help(name):
