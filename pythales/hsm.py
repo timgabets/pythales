@@ -8,23 +8,37 @@ import struct
 from tracetools.tracetools import trace
 
 class Message:
-    def __init__(self, data, header=None):
-        self.length = struct.unpack_from("!H", data[:2])[0]
-        if(self.length != len(data) - 2):
-            raise ValueError('Expected message of length {0} but actual received message length is {1}'.format(self.length, len(data) - 2))
-
-        if header:
-            for h, d in zip(header, data[2:]):
-                if h != d:
-                    raise ValueError('Invalid header')
-
+    def __init__(self, data=None, header=None):
+        if data:
+            self.length = struct.unpack_from("!H", data[:2])[0]
+            if(self.length != len(data) - 2):
+                raise ValueError('Expected message of length {0} but actual received message length is {1}'.format(self.length, len(data) - 2))
+    
+            if header:
+                for h, d in zip(header, data[2:]):
+                    if h != d:
+                        raise ValueError('Invalid header')
+            if header:
+                self.data = data[2 + len(header) : ]
+            else:
+                self.data = data[2:]
+    
     def get_length(self):
+        """
+        """
         return self.length
+
+    def get_data(self):
+        """
+        """
+        return self.data
+
 
 
 class HSM:
     def __init__(self, port=None, header=None):
-        
+        self.firmware_version = '0007-E000'
+
         if port:
             self.port = port
         else:
@@ -61,8 +75,7 @@ class HSM:
 
                     request = Message(data, header=self.header)
 
-
-                    response = struct.pack("!H", len(response)) + self.get_response(request[:2])
+                    response = struct.pack("!H", len(response)) + self.get_response(request.get_data())
                     conn.send(response)
                     trace('>> {} bytes sent:'.format(len(response)), response)
     
@@ -72,14 +85,26 @@ class HSM:
                     sys.exit()
     
 
-    def match_header(self):
-        pass
+    def get_diagnostics_data(self):
+        lmk_check_value = '1234567890ABCDEF'
+        return lmk_check_value + self.firmware_version
+
+
 
     def get_response(self, request):
-        response = b'00'
+        rqst_command_code = request[:2]
+        resp_command_code = None
+        error_code = b'00'
+        resp_data = ''
 
+        if rqst_command_code == b'NC':
+            resp_command_code = b'ND'
+            resp_data = self.get_diagnostics_data()
+        else:
+            resp_command_code = b'ZZ'
+            error_code = b'00'
 
-        return self.header + response
+        return resp_command_code + error_code + bytes(resp_data, 'utf-8')
 
 
 def show_help(name):

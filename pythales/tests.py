@@ -16,7 +16,6 @@ class TestMessageClass(unittest.TestCase):
             m = Message(b'\x00\x0600')
             self.assertEqual(m.get_length(), 6)
 
-
     def test_invalid_message_header(self):
         data = b'\x00\x06SSSS00'
         header = b'XDXD'
@@ -28,20 +27,22 @@ class TestMessageClass(unittest.TestCase):
         header = b'IDDQD'
         self.assertTrue(Message(data, header))
 
+    def test_get_data(self):
+        data = b'\x00\x07HDRDATA'
+        header = b'HDR'
+        m = Message(data, header)
+        self.assertEqual(m.get_data(), b'DATA')
 
-"""
+
 class TestHSM(unittest.TestCase):
     def setUp(self):
         self.hsm = HSM(header='SSSS')
 
-    def test_message_header(self):
-        self.assertEqual(self.hsm.header, b'SSSS')
-
+    """
     NC 
+    """
     def test_NC(self):
-        request = b'NC'
-        self.assertEqual(self.hsm.get_response(request), b'ND00')
-"""
+        self.assertEqual(self.hsm.get_response(b'NC'), b'ND001234567890ABCDEF0007-E000')
 
 if __name__ == '__main__':
     unittest.main()
