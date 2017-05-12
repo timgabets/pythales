@@ -89,13 +89,13 @@ class HSM:
                 try:
                     data = conn.recv(4096)
                     trace('<< {} bytes received: '.format(len(data)), data)
-                        
-                    Len = struct.unpack_from("!H", data[:2])[0]
-                    if(Len != len(data) - 2):
-                        print("Invalid length {0} - {1}".format(Len, len(data) - 2))
+
+                    try:
+                        request = Message(data, header=self.header)
+                    except ValueError as e:
+                        print(e)
                         continue
 
-                    request = Message(data, header=self.header)
                     response = Message(data=None, header=self.header).build(self.get_response(request.get_data()))
                     conn.send(response)
 
