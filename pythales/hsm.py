@@ -9,15 +9,31 @@ from tracetools.tracetools import trace
 
 class DC():
     def __init__(self, data):
-        if data[0] in [b'U', b'T', b'S']:
-            self.key_scheme = data[0]
+        self.data = data
+        if data[0:1] in [b'U', b'T', b'S']:
+            self.key_scheme = data[0:1]
+            self.data = self.data[1:]
         else:
-            self.key_scheme = data[0]
+            self.key_scheme = None
+
+        if self.key_scheme == b'U':
+            self.key = self.data[:32]
+            self.data = self.data[32:]
+        else:
+            print('uNknown key scheme')
+
 
     def get_key_scheme(self):
         """
         """
         return self.key_scheme
+
+
+    def get_key(self):
+        """
+        """
+        return self.key 
+
 
 class Message:
     def __init__(self, data=None, header=None):

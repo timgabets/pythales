@@ -64,7 +64,10 @@ class TestDC(unittest.TestCase):
         self.dc = DC(data)
         
     def test_key_scheme_U(self):
-        self.assertEqual(self.dc.get_key_scheme(), 85)
+        self.assertEqual(self.dc.get_key_scheme(), b'U')
+
+    #def test_key_U(self):
+    #    self.assertEqual(self.dc.get_key(), b'DEADBEEFDEADBEEFDEADBEEFDEADBEEF')
 
 
 class TestHSM(unittest.TestCase):
