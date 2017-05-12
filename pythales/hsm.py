@@ -7,6 +7,18 @@ import struct
 
 from tracetools.tracetools import trace
 
+class DC():
+    def __init__(self, data):
+        if data[0] in [b'U', b'T', b'S']:
+            self.key_scheme = data[0]
+        else:
+            self.key_scheme = data[0]
+
+    def get_key_scheme(self):
+        """
+        """
+        return self.key_scheme
+
 class Message:
     def __init__(self, data=None, header=None):
         if data:
@@ -27,6 +39,10 @@ class Message:
                 self.data = data[2 + len(header) : ]
             else:
                 self.data = data[2:]
+
+            self.command_code = self.data[:2]
+            if self.command_code == b'DC':
+                self.fields = DC(self.data[2:])
         
         else:
             """
@@ -55,6 +71,8 @@ class Message:
             return struct.pack("!H", len(self.header) + len(data)) + self.header + data
         else:
             return struct.pack("!H", len(data)) + data
+
+
 
 
 class HSM:
