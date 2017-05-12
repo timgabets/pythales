@@ -6,33 +6,26 @@ import socket
 import struct 
 
 from tracetools.tracetools import trace
+from collections import OrderedDict
 
 class DC():
     def __init__(self, data):
         self.data = data
-        if data[0:1] in [b'U', b'T', b'S']:
-            self.key_scheme = data[0:1]
-            self.data = self.data[1:]
-        else:
-            self.key_scheme = None
+        self.fields = OrderedDict()
 
-        if self.key_scheme == b'U':
-            self.key = self.data[:32]
+        # TPK
+        if self.data[0:1] in [b'U', b'T', b'S']:
+            self.fields['TPK'] = self.data[0:33]
+            self.data = self.data[33:]
+
+        # PVK
+        if self.data[0:1] in [b'U']:
+            self.fields['PVK Pair'] = self.data[0:33]
+            self.data = self.data[33:]
+        else:
+            self.fields['PVK Pair'] = self.data[0:32]
             self.data = self.data[32:]
-        else:
-            print('uNknown key scheme')
 
-
-    def get_key_scheme(self):
-        """
-        """
-        return self.key_scheme
-
-
-    def get_key(self):
-        """
-        """
-        return self.key 
 
 
 class Message:

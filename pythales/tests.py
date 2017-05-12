@@ -63,11 +63,12 @@ class TestDC(unittest.TestCase):
         data = b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF1234567890ABCDEF1234567890ABCDEF2B687AEFC34B1A890100112345678918723'
         self.dc = DC(data)
         
-    def test_key_scheme_U(self):
-        self.assertEqual(self.dc.get_key_scheme(), b'U')
+    def test_tpk_parsed(self):
+        self.assertEqual(self.dc.fields['TPK'], b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF')
 
-    #def test_key_U(self):
-    #    self.assertEqual(self.dc.get_key(), b'DEADBEEFDEADBEEFDEADBEEFDEADBEEF')
+    def test_pvk_parsed(self):
+        self.assertEqual(self.dc.fields['PVK Pair'], b'1234567890ABCDEF1234567890ABCDEF')
+
 
 
 class TestHSM(unittest.TestCase):
