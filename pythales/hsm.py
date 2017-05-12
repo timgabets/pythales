@@ -46,6 +46,21 @@ class DC():
         self.fields['PVV'] = self.data[0:4]
         self.data = self.data[4:]
 
+    def trace(self):
+        if not self.fields:
+            return ''
+
+        width = 0
+        for key, value in self.fields.items():
+            if len(key) > width:
+                width = len(key)
+
+        dump = ''
+        for key, value in self.fields.items():
+            dump = dump + '\n\t[' + key.ljust(width, ' ') + ']: ' + str(value)[1:]
+        return dump
+
+
 
 class Message:
     def __init__(self, data=None, header=None):

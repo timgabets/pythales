@@ -84,6 +84,12 @@ class TestDC(unittest.TestCase):
     def test_pvv_parsed(self):
         self.assertEqual(self.dc.fields['PVV'], b'8723')
 
+    """
+    trace
+    """
+    def test_dc_trace(self):
+        self.assertEqual(self.dc.trace(), '')
+
 
 class TestHSM(unittest.TestCase):
     def setUp(self):
