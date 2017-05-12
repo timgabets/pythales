@@ -71,7 +71,7 @@ class HSM:
         else:
             self.header = b''
 
-    def run(self):
+    def _init_connection(self):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.bind(('', self.port))   
@@ -80,15 +80,21 @@ class HSM:
         except OSError as msg:
             print('Error starting server: {}'.format(msg))
             sys.exit()
+        
+
+    def run(self):
+        self._init_connection()
 
         while True:
             try:
                 conn, addr = self.sock.accept()
-                print ('Connected client: ' + addr[0] + ':' + str(addr[1]))
+                client_name = addr[0] + ':' + str(addr[1])
+                print ('\033[32mConnected client: {}\033[0m'.format(client_name))
 
                 while True:
                     data = conn.recv(4096)
-                    trace('<< {} bytes received: '.format(len(data)), data)
+                    if len(data):
+                        trace('<< {} bytes received from {}: '.format(len(data), client_name), data)
 
                     try:
                         request = Message(data, header=self.header)
@@ -99,18 +105,19 @@ class HSM:
                     response = Message(data=None, header=self.header).build(self.get_response(request.get_data()))
                     conn.send(response)
 
-                    trace('>> {} bytes sent:'.format(len(response)), response)
+                    trace('>> {} bytes sent to {}:'.format(len(response), client_name), response)
     
             except KeyboardInterrupt:
-                print('Exit')
-                self.sock.close()
-                sys.exit()
+                break
             
             except:
-                print('Exception occured')
+                print('\033[31mDisconnected client: {}\033[0m'.format(client_name))
+                conn.close()
                 continue
 
-    
+        conn.close()
+        self.sock.close()
+
 
     def get_diagnostics_data(self):
         lmk_check_value = '1234567890ABCDEF'
