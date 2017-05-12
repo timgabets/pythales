@@ -1,0 +1,4 @@
+
+* Handling multiple connections
+* Non-dummy LMK support
+* pass LMK as command-limne argument
