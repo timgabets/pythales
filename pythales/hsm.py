@@ -30,6 +30,10 @@ class DC():
         self.fields['PIN block'] = self.data[0:16]
         self.data = self.data[16:]
 
+        # PIN block format code
+        self.fields['PIN block format code'] = self.data[0:2]
+        self.data = self.data[2:]
+
 
 
 

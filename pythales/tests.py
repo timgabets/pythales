@@ -72,6 +72,9 @@ class TestDC(unittest.TestCase):
     def test_pinblock_parsed(self):
         self.assertEqual(self.dc.fields['PIN block'], b'2B687AEFC34B1A89')
 
+    def test_pinblock_format_code_parsed(self):
+        self.assertEqual(self.dc.fields['PIN block format code'], b'01')
+
 
 class TestHSM(unittest.TestCase):
     def setUp(self):
