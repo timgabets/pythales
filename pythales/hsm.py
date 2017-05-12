@@ -82,11 +82,11 @@ class HSM:
             sys.exit()
 
         while True:
-            conn, addr = self.sock.accept()
-            print ('Connected client: ' + addr[0] + ':' + str(addr[1]))
+            try:
+                conn, addr = self.sock.accept()
+                print ('Connected client: ' + addr[0] + ':' + str(addr[1]))
 
-            while True:
-                try:
+                while True:
                     data = conn.recv(4096)
                     trace('<< {} bytes received: '.format(len(data)), data)
 
@@ -101,10 +101,10 @@ class HSM:
 
                     trace('>> {} bytes sent:'.format(len(response)), response)
     
-                except KeyboardInterrupt:
-                    print('Exit')
-                    s.close()
-                    sys.exit()
+            except KeyboardInterrupt:
+                print('Exit')
+                self.sock.close()
+                sys.exit()
     
 
     def get_diagnostics_data(self):

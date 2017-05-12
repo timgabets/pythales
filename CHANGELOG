@@ -1,8 +1,10 @@
 
 May 2017
 
+	0.20 Proper exit on Ctrl^C
 	0.19 Handling message with unexpected length
 	0.18 Python2 support
 
 TODO
 	* Handling client disconnection
+	
