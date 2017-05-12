@@ -4,9 +4,12 @@ import getopt
 import sys
 import socket
 import struct 
+import binascii
 
 from tracetools.tracetools import trace
 from collections import OrderedDict
+from Crypto.Cipher import DES3
+
 
 class DC():
     def __init__(self, data):
@@ -126,13 +129,15 @@ class Message:
 
         dump = ''
         for key, value in self.fields.items():
-            dump = dump + '\t[' + key.ljust(width, ' ') + ']: [' + str(value)[2:-1] + ']\n'
+            dump = dump + '\t[' + key.ljust(width, ' ') + ']: [' + value.decode('utf-8') + ']\n'
         return dump
 
 
 class HSM:
     def __init__(self, port=None, header=None):
         self.firmware_version = '0007-E000'
+        self.LMK = bytes.fromhex('deadbeef deadbeef deadbeef deadbeef')
+        self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
 
         if port:
             self.port = port
@@ -143,6 +148,7 @@ class HSM:
             self.header = bytes(header, 'utf-8')
         else:
             self.header = b''
+
 
     def _init_connection(self):
         try:
@@ -192,13 +198,62 @@ class HSM:
         conn.close()
         self.sock.close()
 
+
+    def _get_clear_key(self, encrypted_key):
+        """
+        Decrypt the key, encrypted under LMK
+        
+        #return binascii.hexlify(clear_key).decode('utf-8').upper()
+        """
+        if encrypted_key[0:1] in [b'U']:
+            return self.cipher.decrypt(bytes.fromhex(encrypted_key[1:].decode('utf-8')))
+        else:
+            return self.cipher.decrypt(bytes.fromhex(encrypted_key.decode('utf-8')))
+
+
+    def _decrypt_pinblock(self, encrypted_pinblock, encrypted_terminal_key):
+        """
+        Decrypt pin block
+        """
+        clear_terminal_key = self._get_clear_key(encrypted_terminal_key)
+        cipher = DES3.new(clear_terminal_key, DES3.MODE_ECB)
+
+        return cipher.decrypt(bytes.fromhex(encrypted_pinblock.decode('utf-8')))
+
+
+    def _get_clear_pin(self, pinblock, account_number):
+        """
+        Calculate the clear PIN from provided PIN block and account_number, which is the 12 right-most digits of card account number, excluding check digit
+        """
+        raw_pinblock = bytes.fromhex(pinblock.decode('utf-8'))
+        raw_acct_num = bytes.fromhex((b'0000' + account_number).decode('utf-8'))
+            
+        pin_str = ''.join(['{0:#0{1}x}'.format((i ^ j), 4)[2:] for i, j in zip(raw_pinblock, raw_acct_num)])
+        pin_length = int(pin_str[:2], 16)
+        
+        if pin_length >= 4 and pin_length < 9:
+            pin = pin_str[2:2+pin_length]            
+            try:
+                int(pin)
+            except ValueError:
+                raise ValueError('PIN contains non-numeric characters')
+            return pin
+        else:
+            raise ValueError('Incorrect PIN length: {}'.format(pin_length))
+            
+
     def verify_pin(self, request):
         """
         Get response to DC command
-        TODO: perform actual check
         """
-        error_code = '00'
-        return Message(data=None, header=self.header).build('DD' + error_code)
+        decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
+
+        try:
+            pin = self._get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
+            tsp = request.fields['Account Number'] + request.fields['PVKI'] + pin[:4]
+            return Message(data=None, header=self.header).build('DD00')
+        except ValueError:
+            return Message(data=None, header=self.header).build('DD01')
 
 
     def get_diagnostics_data(self):
@@ -222,7 +277,6 @@ class HSM:
             return self.verify_pin(request)
         else:
             return Message(data=None, header=self.header).build('ZZ00')
-
 
 
 def show_help(name):

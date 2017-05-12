@@ -1,5 +1,6 @@
 
 May 2017
+	0.25 hsm._get_clear_pin()
 	0.24 Dummy response to DC command
 	0.23 Trace parsed incoming message fields
 	0.22 Coloring connected/disconnected clients

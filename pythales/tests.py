@@ -69,6 +69,7 @@ class TestDC(unittest.TestCase):
     def setUp(self):
         data = b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF1234567890ABCDEF1234567890ABCDEF2B687AEFC34B1A890100112345678918723'
         self.dc = DC(data)
+        self.hsm = HSM(header='SSSS')
         
     def test_tpk_parsed(self):
         self.assertEqual(self.dc.fields['TPK'], b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF')
@@ -91,22 +92,25 @@ class TestDC(unittest.TestCase):
     def test_pvv_parsed(self):
         self.assertEqual(self.dc.fields['PVV'], b'8723')
 
-    """
-    trace
-    """
-    #def test_dc_trace(self):
-    #    self.assertEqual(self.dc.trace(), '')
-
 
 class TestHSM(unittest.TestCase):
     def setUp(self):
         self.hsm = HSM(header='SSSS')
 
-    """
-    NC 
-    def test_NC(self):
-        self.assertEqual(self.hsm.get_response(b'NC'), b'ND001234567890ABCDEF0007-E000')
-    """
+    def test_get_clear_pin_1234(self):
+        self.assertEqual(self.hsm._get_clear_pin(b'0412BCEEDCBA9876', b'881123456789'), '1234')
+
+    def test_get_clear_pin_non_numeric(self):
+        with self.assertRaisesRegex(ValueError, 'PIN contains non-numeric characters'):
+            self.hsm._get_clear_pin(b'041267EEDCBA9876', b'881123456789')
+
+    def test_get_clear_pin_pin_length_9(self):
+        with self.assertRaisesRegex(ValueError, 'Incorrect PIN length: 9'):
+            self.hsm._get_clear_pin(b'091267EEDCBA9876', b'881123456789')
+
+    def test_get_clear_pin_improper_length(self):
+        with self.assertRaisesRegex(ValueError, 'Incorrect PIN length: 223'):
+            self.hsm._get_clear_pin(b'DF1267EEDCBA9876', b'881123456789')
 
 if __name__ == '__main__':
     unittest.main()
