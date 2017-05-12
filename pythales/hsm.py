@@ -34,7 +34,9 @@ class DC():
         self.fields['PIN block format code'] = self.data[0:2]
         self.data = self.data[2:]
 
-
+        # Account Number
+        self.fields['Account Number'] = self.data[0:12]
+        self.data = self.data[12:]        
 
 
 class Message:
