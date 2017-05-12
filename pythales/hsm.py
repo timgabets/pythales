@@ -26,6 +26,11 @@ class DC():
             self.fields['PVK Pair'] = self.data[0:32]
             self.data = self.data[32:]
 
+        # PIN block
+        self.fields['PIN block'] = self.data[0:16]
+        self.data = self.data[16:]
+
+
 
 
 class Message:

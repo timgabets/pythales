@@ -69,6 +69,8 @@ class TestDC(unittest.TestCase):
     def test_pvk_parsed(self):
         self.assertEqual(self.dc.fields['PVK Pair'], b'1234567890ABCDEF1234567890ABCDEF')
 
+    def test_pinblock_parsed(self):
+        self.assertEqual(self.dc.fields['PIN block'], b'2B687AEFC34B1A89')
 
 
 class TestHSM(unittest.TestCase):
