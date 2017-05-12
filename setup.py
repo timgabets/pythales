@@ -29,5 +29,5 @@ setup(name='pythales',
       
       license='LGPLv2',
       packages=['pythales'],
-      install_requires=[],
+      install_requires=['pycrypto'],
       zip_safe=True)
