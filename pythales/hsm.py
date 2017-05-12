@@ -192,6 +192,14 @@ class HSM:
         conn.close()
         self.sock.close()
 
+    def verify_pin(self, request):
+        """
+        Get response to DC command
+        TODO: perform actual check
+        """
+        error_code = '00'
+        return Message(data=None, header=self.header).build('DD' + error_code)
+
 
     def get_diagnostics_data(self):
         """
@@ -210,13 +218,10 @@ class HSM:
         rqst_command_code = request.get_command_code()
         if rqst_command_code == b'NC':
             return self.get_diagnostics_data()
-
-        #elif rqst_command_code == b'DC':
-        #    return self.translate_pinblock(request)
+        elif rqst_command_code == b'DC':
+            return self.verify_pin(request)
         else:
-            resp_command_code = b'ZZ'
-            error_code = b'00'
-            return resp_command_code + error_code + bytes(resp_data, 'utf-8')
+            return Message(data=None, header=self.header).build('ZZ00')
 
 
 
