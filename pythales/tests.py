@@ -47,12 +47,12 @@ class TestMessageClass(unittest.TestCase):
 
     def test_outgoing_message(self):
         m = Message(data=None, header=b'XXXX')
-        self.assertEqual(m.build(b'NG007444321'), b'\x00\x0FXXXXNG007444321')
+        self.assertEqual(m.build('NG007444321'), b'\x00\x0FXXXXNG007444321')
 
 
     def test_outgoing_message_no_header(self):
         m = Message(data=None, header=None)
-        self.assertEqual(m.build(b'NG007444321'), b'\x00\x0BNG007444321')
+        self.assertEqual(m.build('NG007444321'), b'\x00\x0BNG007444321')
 
 
 class TestDC(unittest.TestCase):

@@ -108,9 +108,9 @@ class Message:
         Build the outgoing message
         """
         if self.header:
-            return struct.pack("!H", len(self.header) + len(data)) + self.header + data
+            return struct.pack("!H", len(self.header) + len(data)) + self.header + bytes(data, 'utf-8')
         else:
-            return struct.pack("!H", len(data)) + data
+            return struct.pack("!H", len(data)) + bytes(data, 'utf-8')
 
 
     def trace(self):
@@ -176,7 +176,7 @@ class HSM:
                         print(e)
                         continue
 
-                    response = Message(data=None, header=self.header).build(self.get_response(request))
+                    response = self.get_response(request)
                     conn.send(response)
 
                     trace('>> {} bytes sent to {}:'.format(len(response), client_name), response)
@@ -194,24 +194,30 @@ class HSM:
 
 
     def get_diagnostics_data(self):
+        """
+        Get response to NC command
+        """
+        response_code = 'ND'
+        error_code = '00'
         lmk_check_value = '1234567890ABCDEF'
-        return lmk_check_value + self.firmware_version
+        response_data = response_code + error_code + lmk_check_value + self.firmware_version
+        return Message(data=None, header=self.header).build(response_data)
 
 
     def get_response(self, request):
+        """
+        """
         rqst_command_code = request.get_command_code()
-        resp_command_code = None
-        error_code = b'00'
-        resp_data = ''
-
         if rqst_command_code == b'NC':
-            resp_command_code = b'ND'
-            resp_data = self.get_diagnostics_data()
+            return self.get_diagnostics_data()
+
+        #elif rqst_command_code == b'DC':
+        #    return self.translate_pinblock(request)
         else:
             resp_command_code = b'ZZ'
             error_code = b'00'
+            return resp_command_code + error_code + bytes(resp_data, 'utf-8')
 
-        return resp_command_code + error_code + bytes(resp_data, 'utf-8')
 
 
 def show_help(name):
