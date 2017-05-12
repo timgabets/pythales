@@ -1,5 +1,6 @@
 
 May 2017
+	0.23 Trace parsed incoming message fields
 	0.22 Coloring connected/disconnected clients
 	0.21 Handling client disconnection
 	0.20 Proper exit on Ctrl^C

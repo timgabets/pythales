@@ -104,9 +104,9 @@ class TestHSM(unittest.TestCase):
 
     """
     NC 
-    """
     def test_NC(self):
         self.assertEqual(self.hsm.get_response(b'NC'), b'ND001234567890ABCDEF0007-E000')
+    """
 
 if __name__ == '__main__':
     unittest.main()

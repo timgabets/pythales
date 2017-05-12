@@ -72,8 +72,11 @@ class Message:
                 self.data = data[2:]
 
             self.command_code = self.data[:2]
+            
             if self.command_code == b'DC':
                 self.fields = DC(self.data[2:]).fields
+            else:
+                self.fields = None
 
         else:
             """
@@ -113,10 +116,7 @@ class Message:
     def trace(self):
         """
         """
-        try:
-            if not self.fields:
-                return ''
-        except KeyError:
+        if not self.fields:
             return ''
 
         width = 0
@@ -126,7 +126,7 @@ class Message:
 
         dump = ''
         for key, value in self.fields.items():
-            dump = dump + '\n\t[' + key.ljust(width, ' ') + ']: ' + str(value)[1:]
+            dump = dump + '\t[' + key.ljust(width, ' ') + ']: [' + str(value)[2:-1] + ']\n'
         return dump
 
 
@@ -171,7 +171,7 @@ class HSM:
 
                     try:
                         request = Message(data, header=self.header)
-                        request.trace()
+                        print(request.trace())
                     except ValueError as e:
                         print(e)
                         continue
@@ -199,7 +199,7 @@ class HSM:
 
 
     def get_response(self, request):
-        rqst_command_code = request[:2]
+        rqst_command_code = request.get_command_code()
         resp_command_code = None
         error_code = b'00'
         resp_data = ''
