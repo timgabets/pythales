@@ -89,7 +89,7 @@ class HSM:
             try:
                 conn, addr = self.sock.accept()
                 client_name = addr[0] + ':' + str(addr[1])
-                print ('\033[32mConnected client: {}\033[0m'.format(client_name))
+                print ('Connected client: {}'.format(client_name))
 
                 while True:
                     data = conn.recv(4096)
@@ -111,7 +111,7 @@ class HSM:
                 break
             
             except:
-                print('\033[31mDisconnected client: {}\033[0m'.format(client_name))
+                print('Disconnected client: {}'.format(client_name))
                 conn.close()
                 continue
 
