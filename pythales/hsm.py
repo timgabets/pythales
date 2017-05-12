@@ -105,6 +105,11 @@ class HSM:
                 print('Exit')
                 self.sock.close()
                 sys.exit()
+            
+            except:
+                print('Exception occured')
+                continue
+
     
 
     def get_diagnostics_data(self):
