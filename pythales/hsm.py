@@ -46,19 +46,7 @@ class DC():
         self.fields['PVV'] = self.data[0:4]
         self.data = self.data[4:]
 
-    def trace(self):
-        if not self.fields:
-            return ''
-
-        width = 0
-        for key, value in self.fields.items():
-            if len(key) > width:
-                width = len(key)
-
-        dump = ''
-        for key, value in self.fields.items():
-            dump = dump + '\n\t[' + key.ljust(width, ' ') + ']: ' + str(value)[1:]
-        return dump
+    
 
 
 
@@ -85,8 +73,8 @@ class Message:
 
             self.command_code = self.data[:2]
             if self.command_code == b'DC':
-                self.fields = DC(self.data[2:])
-        
+                self.fields = DC(self.data[2:]).fields
+
         else:
             """
             Outgoing message
@@ -94,6 +82,12 @@ class Message:
             self.header = header
 
     
+    def get_command_code(self):
+        """
+        """
+        return self.command_code
+
+
     def get_length(self):
         """
         """
@@ -116,6 +110,24 @@ class Message:
             return struct.pack("!H", len(data)) + data
 
 
+    def trace(self):
+        """
+        """
+        try:
+            if not self.fields:
+                return ''
+        except KeyError:
+            return ''
+
+        width = 0
+        for key, value in self.fields.items():
+            if len(key) > width:
+                width = len(key)
+
+        dump = ''
+        for key, value in self.fields.items():
+            dump = dump + '\n\t[' + key.ljust(width, ' ') + ']: ' + str(value)[1:]
+        return dump
 
 
 class HSM:
@@ -159,11 +171,12 @@ class HSM:
 
                     try:
                         request = Message(data, header=self.header)
+                        request.trace()
                     except ValueError as e:
                         print(e)
                         continue
 
-                    response = Message(data=None, header=self.header).build(self.get_response(request.get_data()))
+                    response = Message(data=None, header=self.header).build(self.get_response(request))
                     conn.send(response)
 
                     trace('>> {} bytes sent to {}:'.format(len(response), client_name), response)
