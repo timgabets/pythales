@@ -78,6 +78,12 @@ class TestDC(unittest.TestCase):
     def test_account_number_parsed(self):
         self.assertEqual(self.dc.fields['Account Number'], b'001123456789')
 
+    def test_pvki_parsed(self):
+        self.assertEqual(self.dc.fields['PVKI'], b'1')
+
+    def test_pvv_parsed(self):
+        self.assertEqual(self.dc.fields['PVV'], b'8723')
+
 
 class TestHSM(unittest.TestCase):
     def setUp(self):

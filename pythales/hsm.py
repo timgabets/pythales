@@ -36,7 +36,15 @@ class DC():
 
         # Account Number
         self.fields['Account Number'] = self.data[0:12]
-        self.data = self.data[12:]        
+        self.data = self.data[12:]
+
+        # PVKI
+        self.fields['PVKI'] = self.data[0:1]
+        self.data = self.data[1:]
+
+        # PVV
+        self.fields['PVV'] = self.data[0:4]
+        self.data = self.data[4:]
 
 
 class Message:
