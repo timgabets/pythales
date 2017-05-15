@@ -317,7 +317,6 @@ class HSM:
         try:
             pin = self._get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
             pvv = self._get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
-            print(pvv)
             if pvv == request.fields['PVV']:
                 return Message(data=None, header=self.header).build('DD00')
             else:
