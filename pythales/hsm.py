@@ -397,10 +397,13 @@ class HSM:
         """
         response_code = b'CB00'
         pin_length = b'04'
-        translated_pin_block = request.fields['Source PIN block']
         pinblock_format = request.fields['Destination PIN block format']
 
-        return Message(data=None, header=self.header).build(response_code + pin_length + translated_pin_block + pinblock_format)
+        decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
+        cipher = DES3.new(binascii.unhexlify(request.fields['Destination Key']), DES3.MODE_ECB)
+        translated_pin_block = cipher.encrypt(binascii.unhexlify(decrypted_pinblock))
+
+        return Message(data=None, header=self.header).build(response_code + pin_length + binascii.hexlify(translated_pin_block) + pinblock_format)
 
 
     def get_diagnostics_data(self):
