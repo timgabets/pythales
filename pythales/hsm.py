@@ -240,7 +240,10 @@ class HSM:
             return bytes(pin, 'utf-8')
         else:
             raise ValueError('Incorrect PIN length: {}'.format(pin_length))
-            
+    
+    def check_key_parity(self, key):
+        pass
+
 
     def _get_pvv_digits_from_string(self, cyphertext):
         """
@@ -295,11 +298,11 @@ class HSM:
         tsp = account_number[-12:-1] + key_index + pin
         if len(PVK) != 32:
             raise ValueError('Incorrect key length')
-    
+
         left_key_cypher = DES3.new(PVK[:16], DES3.MODE_ECB)
         right_key_cypher = DES3.new(PVK[16:], DES3.MODE_ECB)
 
-        encrypted_raw = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(tsp))))
+        encrypted_raw = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(binascii.unhexlify(tsp)))))
         encrypted_str = binascii.hexlify(encrypted_raw).decode('utf-8').upper()
     
         return bytes(self._get_pvv_digits_from_string(encrypted_str), 'utf-8')
