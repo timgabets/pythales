@@ -1,5 +1,14 @@
 
 May 2017
+	0.34 translate_pinblock() dummy function
+	0.33 CA command support
+	0.32 hsm --key option
+	0.31 Showing info on simulator start
+	0.30 Fixed _get_visa_pvv() bug related to TSP data representation
+	0.29 Fixed 'TPK Pair' bug
+	0.28 Checking the key length in _get_visa_pvv()
+	0.27 PVV verification
+	0.26 test_decrypt_pinblock() returns hex-encoded bytes
 	0.25 hsm._get_clear_pin()
 	0.24 Dummy response to DC command
 	0.23 Trace parsed incoming message fields

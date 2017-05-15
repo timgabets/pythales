@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import HSM, Message, DC
+from pythales.hsm import HSM, Message, CA, DC
 
 class TestMessageClass(unittest.TestCase):
     """
@@ -93,12 +93,53 @@ class TestDC(unittest.TestCase):
         self.assertEqual(self.dc.fields['PVV'], b'8723')
 
 
+class TestCA(unittest.TestCase):
+    """
+    18:47:19.371109 << 108 bytes received from 192.168.56.101:33284: 
+        00 6a 53 53 53 53 43 41 55 45 44 34 41 33 35 44         .jSSSSCAUED4A35D
+        35 32 43 39 30 36 33 41 31 45 44 34 41 33 35 44         52C9063A1ED4A35D
+        35 32 43 39 30 36 33 41 31 55 44 33 39 44 33 39         52C9063A1UD39D39
+        45 42 37 43 39 33 32 43 46 33 36 37 43 39 37 43         EB7C932CF367C97C
+        35 42 31 30 42 32 43 31 39 35 31 32 37 44 46 33         5B10B2C195127DF3
+        36 36 42 38 36 41 45 32 44 39 41 37 30 31 30 33         66B86AE2D9A70103
+        35 35 32 30 30 30 30 30 30 30 31 32                     552000000012
+    """
+    def setUp(self):
+        data = b'UED4A35D52C9063A1ED4A35D52C9063A1UD39D39EB7C932CF367C97C5B10B2C195127DF366B86AE2D9A70103552000000012'
+        self.ca = CA(data)
+        self.hsm = HSM(header='SSSS')
+
+    def test_tpk_parsed(self):
+        self.assertEqual(self.ca.fields['TPK'], b'UED4A35D52C9063A1ED4A35D52C9063A1')
+
+    def test_dest_key_parsed(self):
+        self.assertEqual(self.ca.fields['Destination Key'], b'UD39D39EB7C932CF367C97C5B10B2C195')
+
+    def test_max_pin_length_parsed(self):
+        self.assertEqual(self.ca.fields['Maximum PIN Length'], b'12')
+
+    def test_source_pin_block_parsed(self):
+        self.assertEqual(self.ca.fields['Source PIN block'], b'7DF366B86AE2D9A7')
+
+    def test_source_pin_block_format_parsed(self):
+        self.assertEqual(self.ca.fields['Source PIN block format'], b'01')
+
+    def test_dest_pin_block_format_parsed(self):
+        self.assertEqual(self.ca.fields['Destination PIN block format'], b'03')
+
+    def test_account_number_parsed(self):
+        self.assertEqual(self.ca.fields['Account Number'], b'552000000012')
+
+
 class TestHSM(unittest.TestCase):
     def setUp(self):
         self.hsm = HSM(header='SSSS')
 
+    def test_decrypt_pinblock(self):
+        self.assertEqual(self.hsm._decrypt_pinblock(b'2B687AEFC34B1A89', b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF'), b'D694D2659AD26C2E')
+
     def test_get_clear_pin_1234(self):
-        self.assertEqual(self.hsm._get_clear_pin(b'0412BCEEDCBA9876', b'881123456789'), '1234')
+        self.assertEqual(self.hsm._get_clear_pin(b'0412BCEEDCBA9876', b'881123456789'), b'1234')
 
     def test_get_clear_pin_non_numeric(self):
         with self.assertRaisesRegex(ValueError, 'PIN contains non-numeric characters'):
@@ -111,6 +152,39 @@ class TestHSM(unittest.TestCase):
     def test_get_clear_pin_improper_length(self):
         with self.assertRaisesRegex(ValueError, 'Incorrect PIN length: 223'):
             self.hsm._get_clear_pin(b'DF1267EEDCBA9876', b'881123456789')
+
+    """
+    hsm._get_pvv_digits_from_string()
+    """
+    def test_get_pvv_digits_from_string(self):
+        self.assertEqual(self.hsm._get_pvv_digits_from_string('59EF34AD722C0556F7F6FBD4A76D38E6'), '5934')
+
+    def test_get_pvv_digits_from_mixed_string(self):
+        self.assertEqual(self.hsm._get_pvv_digits_from_string('EEFADCFFFBD7ADECAB9FBB'), '7944')
+
+    def test_get_pvv_digits_from_string_letters_only(self):
+        self.assertEqual(self.hsm._get_pvv_digits_from_string('EFADCFFFBDADECABFBB'), '4503')
+
+    """
+    hsm._get_visa_pvv()
+    """
+    def test_get_visa_pvv(self):
+        self.assertEqual(self.hsm._get_visa_pvv(b'4761260000000134', b'1', b'1234', b'DEADDEADDEADDEADBEAFBEAFBEAFBEAF'), b'8289')
+
+    def test_get_visa_pvv_incorrect_key(self):
+        with self.assertRaisesRegex(ValueError, 'Incorrect key length'):
+            self.hsm._get_visa_pvv(b'4761260000000134', b'1', b'1234', b'DEADDEADDEADDEADBEAFBEAFBEAF')
+
+    """
+    User-defined key
+    """
+    def test_user_defined_key_wrong_key_size(self):
+        with self.assertRaises(ValueError):
+            self.hsm = HSM(key='DEADBEAF')
+
+    def test_user_defined_key_value(self):
+        with self.assertRaises(ValueError):
+            self.hsm = HSM(key='iddqdeef deadbeef deadbeef deadbeef')
 
 if __name__ == '__main__':
     unittest.main()

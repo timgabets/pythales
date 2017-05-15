@@ -18,39 +18,87 @@ class DC():
 
         # TPK
         if self.data[0:1] in [b'U', b'T', b'S']:
-            self.fields['TPK'] = self.data[0:33]
-            self.data = self.data[33:]
+            field_size = 33            
+            self.fields['TPK'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
 
         # PVK
         if self.data[0:1] in [b'U']:
-            self.fields['PVK Pair'] = self.data[0:33]
-            self.data = self.data[33:]
+            field_size = 33            
+            self.fields['PVK Pair'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
         else:
-            self.fields['PVK Pair'] = self.data[0:32]
-            self.data = self.data[32:]
+            field_size = 32
+            self.fields['PVK Pair'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
 
         # PIN block
-        self.fields['PIN block'] = self.data[0:16]
-        self.data = self.data[16:]
+        field_size = 16
+        self.fields['PIN block'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
         # PIN block format code
-        self.fields['PIN block format code'] = self.data[0:2]
-        self.data = self.data[2:]
+        field_size = 2
+        self.fields['PIN block format code'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
         # Account Number
-        self.fields['Account Number'] = self.data[0:12]
-        self.data = self.data[12:]
+        field_size = 12
+        self.fields['Account Number'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
         # PVKI
-        self.fields['PVKI'] = self.data[0:1]
-        self.data = self.data[1:]
+        field_size = 1
+        self.fields['PVKI'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
         # PVV
-        self.fields['PVV'] = self.data[0:4]
-        self.data = self.data[4:]
+        field_size = 4
+        self.fields['PVV'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
-    
 
+class CA():
+    def __init__(self, data):
+        self.data = data
+        self.fields = OrderedDict()
+
+        # TPK
+        if self.data[0:1] in [b'U', b'T', b'S']:
+            field_size = 33
+            self.fields['TPK'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+
+        # Destination Key
+        if self.data[0:1] in [b'U', b'T', b'S']:
+            field_size = 33
+            self.fields['Destination Key'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+
+        # Maximum PIN Length
+        field_size = 2
+        self.fields['Maximum PIN Length'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Source PIN block
+        field_size = 16
+        self.fields['Source PIN block'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Source PIN block format
+        field_size = 2
+        self.fields['Source PIN block format'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Destination PIN block format
+        field_size = 2
+        self.fields['Destination PIN block format'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Account Number
+        field_size = 12
+        self.fields['Account Number'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
 
 class Message:
@@ -78,6 +126,8 @@ class Message:
             
             if self.command_code == b'DC':
                 self.fields = DC(self.data[2:]).fields
+            elif self.command_code == b'CA':
+                self.fields = CA(self.data[2:]).fields
             else:
                 self.fields = None
 
@@ -111,9 +161,9 @@ class Message:
         Build the outgoing message
         """
         if self.header:
-            return struct.pack("!H", len(self.header) + len(data)) + self.header + bytes(data, 'utf-8')
+            return struct.pack("!H", len(self.header) + len(data)) + self.header + data
         else:
-            return struct.pack("!H", len(data)) + bytes(data, 'utf-8')
+            return struct.pack("!H", len(data)) + data
 
 
     def trace(self):
@@ -134,10 +184,8 @@ class Message:
 
 
 class HSM:
-    def __init__(self, port=None, header=None):
+    def __init__(self, port=None, header=None, key=None):
         self.firmware_version = '0007-E000'
-        self.LMK = bytes.fromhex('deadbeef deadbeef deadbeef deadbeef')
-        self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
 
         if port:
             self.port = port
@@ -149,8 +197,26 @@ class HSM:
         else:
             self.header = b''
 
+        if key:
+            self.LMK = bytes.fromhex(key)
+        else:
+            self.LMK = bytes.fromhex('deadbeef deadbeef deadbeef deadbeef')
+        self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
+
+    
+    def info(self):
+        """
+        """
+        dump = ''
+        dump += 'LMK: {}\n'.format(binascii.hexlify(self.LMK).decode('utf-8').upper())
+        dump += 'Firmware version: {}\n'.format(self.firmware_version)
+        if self.header:
+            dump += 'Message header: {}\n'.format(self.header.decode('utf-8'))
+        return dump
+
 
     def _init_connection(self):
+        print(self.info())
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.bind(('', self.port))   
@@ -202,8 +268,6 @@ class HSM:
     def _get_clear_key(self, encrypted_key):
         """
         Decrypt the key, encrypted under LMK
-        
-        #return binascii.hexlify(clear_key).decode('utf-8').upper()
         """
         if encrypted_key[0:1] in [b'U']:
             return self.cipher.decrypt(bytes.fromhex(encrypted_key[1:].decode('utf-8')))
@@ -217,8 +281,8 @@ class HSM:
         """
         clear_terminal_key = self._get_clear_key(encrypted_terminal_key)
         cipher = DES3.new(clear_terminal_key, DES3.MODE_ECB)
-
-        return cipher.decrypt(bytes.fromhex(encrypted_pinblock.decode('utf-8')))
+        raw = cipher.decrypt(bytes.fromhex(encrypted_pinblock.decode('utf-8')))
+        return bytes(binascii.hexlify(raw).decode('utf-8').upper(), 'utf-8')
 
 
     def _get_clear_pin(self, pinblock, account_number):
@@ -237,10 +301,77 @@ class HSM:
                 int(pin)
             except ValueError:
                 raise ValueError('PIN contains non-numeric characters')
-            return pin
+            return bytes(pin, 'utf-8')
         else:
             raise ValueError('Incorrect PIN length: {}'.format(pin_length))
-            
+
+    
+    def check_key_parity(self, key):
+        pass
+
+
+    def _get_pvv_digits_from_string(self, cyphertext):
+        """
+        Extract PVV digits from the cyphertext (HEX-encoded string)
+        """
+        PVV = ''
+    
+        """
+        1. The cyphertext is scanned from left to right. Decimal digits are
+        selected during the scan until four decimal digits are found. Each
+        selected digit is placed from left to right according to the order
+        of selection. If four decimal digits are found, those digits are the
+        PVV.
+        """
+        for c in cyphertext:
+            if len(PVV) >= 4:
+                break
+    
+            try:
+                int(c)
+                PVV += c
+            except ValueError:
+                continue
+    
+        """
+        2. If, at the end of the first scan, less than four decimal digits
+        have been selected, a second scan is performed from left to right.
+        During the second scan, all decimal digits are skipped and only nondecimal
+        digits can be processed. Nondecimal digits are converted to decimal
+        digits by subtracting 10. The process proceeds until four digits of
+        PVV are found.
+        """
+        if len(PVV) < 4:
+            for c in cyphertext:
+                if len(PVV) >= 4:
+                    break
+    
+                if (int(c, 16) - 10) >= 0:
+                    PVV += str(int(c, 16) - 10)
+    
+        return PVV
+
+
+    def _get_visa_pvv(self, account_number, key_index, pin, PVK):
+        """
+        The algorithm generates a 4-digit PIN verification value (PVV) based on the transformed security parameter (TSP).
+    
+        For VISA PVV algorithms, the leftmost 11 digits of the TSP are the personal account number (PAN), 
+        the leftmost 12th digit is a key table index to select the PVV generation key, and the rightmost 
+        4 digits are the PIN. The key table index should have a value between 1 and 6, inclusive.
+        """
+        tsp = account_number[-12:-1] + key_index + pin
+        if len(PVK) != 32:
+            raise ValueError('Incorrect key length')
+
+        left_key_cypher = DES3.new(PVK[:16], DES3.MODE_ECB)
+        right_key_cypher = DES3.new(PVK[16:], DES3.MODE_ECB)
+
+        encrypted_raw = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(binascii.unhexlify(tsp)))))
+        encrypted_str = binascii.hexlify(encrypted_raw).decode('utf-8').upper()
+    
+        return bytes(self._get_pvv_digits_from_string(encrypted_str), 'utf-8')
+
 
     def verify_pin(self, request):
         """
@@ -250,20 +381,36 @@ class HSM:
 
         try:
             pin = self._get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
-            tsp = request.fields['Account Number'] + request.fields['PVKI'] + pin[:4]
-            return Message(data=None, header=self.header).build('DD00')
+            pvv = self._get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
+            if pvv == request.fields['PVV']:
+                return Message(data=None, header=self.header).build(b'DD00')
+            else:
+                return Message(data=None, header=self.header).build(b'DD01')
+
         except ValueError:
-            return Message(data=None, header=self.header).build('DD01')
+            return Message(data=None, header=self.header).build(b'DD01')
+
+
+    def translate_pinblock(self, request):
+        """
+        Get response to CA command (Translate PIN from TPK to ZPK)
+        """
+        response_code = b'CB00'
+        pin_length = b'04'
+        translated_pin_block = request.fields['Source PIN block']
+        pinblock_format = request.fields['Destination PIN block format']
+
+        return Message(data=None, header=self.header).build(response_code + pin_length + translated_pin_block + pinblock_format)
 
 
     def get_diagnostics_data(self):
         """
         Get response to NC command
         """
-        response_code = 'ND'
-        error_code = '00'
-        lmk_check_value = '1234567890ABCDEF'
-        response_data = response_code + error_code + lmk_check_value + self.firmware_version
+        response_code = b'ND'
+        error_code = b'00'
+        lmk_check_value = b'1234567890ABCDEF'
+        response_data = response_code + error_code + lmk_check_value + bytes(self.firmware_version, 'utf-8')
         return Message(data=None, header=self.header).build(response_data)
 
 
@@ -275,8 +422,10 @@ class HSM:
             return self.get_diagnostics_data()
         elif rqst_command_code == b'DC':
             return self.verify_pin(request)
+        elif rqst_command_code == b'CA':
+            return self.translate_pinblock(request)
         else:
-            return Message(data=None, header=self.header).build('ZZ00')
+            return Message(data=None, header=self.header).build(b'ZZ00')
 
 
 def show_help(name):
@@ -286,13 +435,15 @@ def show_help(name):
     print('Usage: python3 {} [OPTIONS]... '.format(name))
     print('Thales HSM command simulator')
     print('  -p, --port=[PORT]\t\tTCP port to listen, 1500 by default')
+    print('  -k, --key=[KEY]\t\tTCP port to listen, 1500 by default')
     print('  -h, --header=[HEADER]\t\tmessage header, empty by default')
 
 if __name__ == '__main__':
     port = None
     header = ''
+    key = None
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'h:p:', ['header=', 'port='])
+    optlist, args = getopt.getopt(sys.argv[1:], 'h:p:k:', ['header=', 'port=', 'key='])
     for opt, arg in optlist:
         if opt in ('-h', '--header'):
             header = arg
@@ -302,11 +453,13 @@ if __name__ == '__main__':
             except ValueError:
                 print('Invalid TCP port: {}'.format(arg))
                 sys.exit()
+        elif opt in ('-k', '--key'):
+            key = arg
         else:
             show_help(sys.argv[0])
             sys.exit()
 
-    hsm = HSM(port, header)
+    hsm = HSM(port=port, header=header, key=key)
     hsm.run()
 
 
