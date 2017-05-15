@@ -97,6 +97,9 @@ class TestHSM(unittest.TestCase):
     def setUp(self):
         self.hsm = HSM(header='SSSS')
 
+    def test_decrypt_pinblock(self):
+        self.assertEqual(self.hsm._decrypt_pinblock(b'2B687AEFC34B1A89', b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF'), b'D694D2659AD26C2E')
+
     def test_get_clear_pin_1234(self):
         self.assertEqual(self.hsm._get_clear_pin(b'0412BCEEDCBA9876', b'881123456789'), '1234')
 
