@@ -400,7 +400,11 @@ class HSM:
         pinblock_format = request.fields['Destination PIN block format']
 
         decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
-        cipher = DES3.new(binascii.unhexlify(request.fields['Destination Key']), DES3.MODE_ECB)
+
+        if request.fields['Destination Key'][0:1] in [b'U']:
+            destination_key = request.fields['Destination Key'][1:]
+
+        cipher = DES3.new(binascii.unhexlify(destination_key), DES3.MODE_ECB)
         translated_pin_block = cipher.encrypt(binascii.unhexlify(decrypted_pinblock))
 
         return Message(data=None, header=self.header).build(response_code + pin_length + binascii.hexlify(translated_pin_block) + pinblock_format)
