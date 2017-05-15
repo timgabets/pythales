@@ -302,7 +302,7 @@ class HSM:
         encrypted_raw = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(tsp))))
         encrypted_str = binascii.hexlify(encrypted_raw).decode('utf-8').upper()
     
-        return self._get_pvv_digits_from_string(encrypted_str)         
+        return bytes(self._get_pvv_digits_from_string(encrypted_str), 'utf-8')
 
 
     def verify_pin(self, request):
@@ -310,9 +310,6 @@ class HSM:
         Get response to DC command
         """
         decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
-
-        from pudb import set_trace
-        set_trace()
 
         try:
             pin = self._get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
