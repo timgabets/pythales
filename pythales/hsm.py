@@ -237,7 +237,7 @@ class HSM:
                 int(pin)
             except ValueError:
                 raise ValueError('PIN contains non-numeric characters')
-            return pin
+            return bytes(pin, 'utf-8')
         else:
             raise ValueError('Incorrect PIN length: {}'.format(pin_length))
             
@@ -311,9 +311,12 @@ class HSM:
         """
         decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
 
+        from pudb import set_trace
+        set_trace()
+
         try:
             pin = self._get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
-            pvv = self._get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK'])
+            pvv = self._get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
             print(pvv)
             if pvv == request.fields['PVV']:
                 return Message(data=None, header=self.header).build('DD00')

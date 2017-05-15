@@ -101,7 +101,7 @@ class TestHSM(unittest.TestCase):
         self.assertEqual(self.hsm._decrypt_pinblock(b'2B687AEFC34B1A89', b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF'), b'D694D2659AD26C2E')
 
     def test_get_clear_pin_1234(self):
-        self.assertEqual(self.hsm._get_clear_pin(b'0412BCEEDCBA9876', b'881123456789'), '1234')
+        self.assertEqual(self.hsm._get_clear_pin(b'0412BCEEDCBA9876', b'881123456789'), b'1234')
 
     def test_get_clear_pin_non_numeric(self):
         with self.assertRaisesRegex(ValueError, 'PIN contains non-numeric characters'):
