@@ -1,5 +1,3 @@
 
 * Handling multiple connections
-* Non-dummy LMK support
-* pass LMK as command-limne argument
 * hsm._verify_pvv()

@@ -137,6 +137,16 @@ class TestHSM(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Incorrect key length'):
             self.hsm._get_visa_pvv(b'4761260000000134', b'1', b'1234', b'DEADDEADDEADDEADBEAFBEAFBEAF')
 
+    """
+    User-defined key
+    """
+    def test_user_defined_key_wrong_key_size(self):
+        with self.assertRaises(ValueError):
+            self.hsm = HSM(key='DEADBEAF')
+
+    def test_user_defined_key_value(self):
+        with self.assertRaises(ValueError):
+            self.hsm = HSM(key='iddqdeef deadbeef deadbeef deadbeef')
 
 if __name__ == '__main__':
     unittest.main()

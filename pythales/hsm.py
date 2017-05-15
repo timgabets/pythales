@@ -134,10 +134,8 @@ class Message:
 
 
 class HSM:
-    def __init__(self, port=None, header=None):
+    def __init__(self, port=None, header=None, key=None):
         self.firmware_version = '0007-E000'
-        self.LMK = bytes.fromhex('deadbeef deadbeef deadbeef deadbeef')
-        self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
 
         if port:
             self.port = port
@@ -149,7 +147,11 @@ class HSM:
         else:
             self.header = b''
 
-        print(self.info())
+        if key:
+            self.LMK = bytes.fromhex(key)
+        else:
+            self.LMK = bytes.fromhex('deadbeef deadbeef deadbeef deadbeef')
+        self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
 
     
     def info(self):
@@ -164,6 +166,7 @@ class HSM:
 
 
     def _init_connection(self):
+        print(self.info())
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.bind(('', self.port))   
@@ -368,13 +371,15 @@ def show_help(name):
     print('Usage: python3 {} [OPTIONS]... '.format(name))
     print('Thales HSM command simulator')
     print('  -p, --port=[PORT]\t\tTCP port to listen, 1500 by default')
+    print('  -k, --key=[KEY]\t\tTCP port to listen, 1500 by default')
     print('  -h, --header=[HEADER]\t\tmessage header, empty by default')
 
 if __name__ == '__main__':
     port = None
     header = ''
+    key = None
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'h:p:', ['header=', 'port='])
+    optlist, args = getopt.getopt(sys.argv[1:], 'h:p:k:', ['header=', 'port=', 'key='])
     for opt, arg in optlist:
         if opt in ('-h', '--header'):
             header = arg
@@ -384,11 +389,13 @@ if __name__ == '__main__':
             except ValueError:
                 print('Invalid TCP port: {}'.format(arg))
                 sys.exit()
+        elif opt in ('-k', '--key'):
+            key = arg
         else:
             show_help(sys.argv[0])
             sys.exit()
 
-    hsm = HSM(port, header)
+    hsm = HSM(port=port, header=header, key=key)
     hsm.run()
 
 
