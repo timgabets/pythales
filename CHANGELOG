@@ -1,5 +1,7 @@
 
 May 2017
+	0.28 Checking the key length in _get_visa_pvv()
+	0.27 PVV verification
 	0.26 test_decrypt_pinblock() returns hex-encoded bytes
 	0.25 hsm._get_clear_pin()
 	0.24 Dummy response to DC command

@@ -281,7 +281,28 @@ class HSM:
                 if (int(c, 16) - 10) >= 0:
                     PVV += str(int(c, 16) - 10)
     
-        return PVV            
+        return PVV
+
+
+    def _get_visa_pvv(self, account_number, key_index, pin, PVK):
+        """
+        The algorithm generates a 4-digit PIN verification value (PVV) based on the transformed security parameter (TSP).
+    
+        For VISA PVV algorithms, the leftmost 11 digits of the TSP are the personal account number (PAN), 
+        the leftmost 12th digit is a key table index to select the PVV generation key, and the rightmost 
+        4 digits are the PIN. The key table index should have a value between 1 and 6, inclusive.
+        """
+        tsp = account_number[-12:-1] + key_index + pin
+        if len(PVK) != 32:
+            raise ValueError('Incorrect key length')
+    
+        left_key_cypher = DES3.new(PVK[:16], DES3.MODE_ECB)
+        right_key_cypher = DES3.new(PVK[16:], DES3.MODE_ECB)
+
+        encrypted_raw = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(tsp))))
+        encrypted_str = binascii.hexlify(encrypted_raw).decode('utf-8').upper()
+    
+        return self._get_pvv_digits_from_string(encrypted_str)         
 
 
     def verify_pin(self, request):
@@ -292,8 +313,13 @@ class HSM:
 
         try:
             pin = self._get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
-            tsp = request.fields['Account Number'] + request.fields['PVKI'] + pin[:4]
-            return Message(data=None, header=self.header).build('DD00')
+            pvv = self._get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK'])
+            print(pvv)
+            if pvv == request.fields['PVV']:
+                return Message(data=None, header=self.header).build('DD00')
+            else:
+                return Message(data=None, header=self.header).build('DD01')
+
         except ValueError:
             return Message(data=None, header=self.header).build('DD01')
 

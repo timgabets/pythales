@@ -127,5 +127,16 @@ class TestHSM(unittest.TestCase):
     def test_get_pvv_digits_from_string_letters_only(self):
         self.assertEqual(self.hsm._get_pvv_digits_from_string('EFADCFFFBDADECABFBB'), '4503')
 
+    """
+    hsm._get_visa_pvv()
+    """
+    def test_get_visa_pvv(self):
+        self.assertEqual(self.hsm._get_visa_pvv(b'4761260000000134', b'1', b'1234', b'DEADDEADDEADDEADBEAFBEAFBEAFBEAF'), '5934')
+
+    def test_get_visa_pvv_incorrect_key(self):
+        with self.assertRaisesRegex(ValueError, 'Incorrect key length'):
+            self.assertEqual(self.hsm._get_visa_pvv(b'4761260000000134', b'1', b'1234', b'DEADDEADDEADDEADBEAFBEAFBEAF'), '5934')
+
+
 if __name__ == '__main__':
     unittest.main()
