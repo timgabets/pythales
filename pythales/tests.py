@@ -115,5 +115,17 @@ class TestHSM(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Incorrect PIN length: 223'):
             self.hsm._get_clear_pin(b'DF1267EEDCBA9876', b'881123456789')
 
+    """
+    hsm._get_pvv_digits_from_string()
+    """
+    def test_get_pvv_digits_from_string(self):
+        self.assertEqual(self.hsm._get_pvv_digits_from_string('59EF34AD722C0556F7F6FBD4A76D38E6'), '5934')
+
+    def test_get_pvv_digits_from_mixed_string(self):
+        self.assertEqual(self.hsm._get_pvv_digits_from_string('EEFADCFFFBD7ADECAB9FBB'), '7944')
+
+    def test_get_pvv_digits_from_string_letters_only(self):
+        self.assertEqual(self.hsm._get_pvv_digits_from_string('EFADCFFFBDADECABFBB'), '4503')
+
 if __name__ == '__main__':
     unittest.main()

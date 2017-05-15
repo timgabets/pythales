@@ -242,6 +242,48 @@ class HSM:
             raise ValueError('Incorrect PIN length: {}'.format(pin_length))
             
 
+    def _get_pvv_digits_from_string(self, cyphertext):
+        """
+        Extract PVV digits from the cyphertext (HEX-encoded string)
+        """
+        PVV = ''
+    
+        """
+        1. The cyphertext is scanned from left to right. Decimal digits are
+        selected during the scan until four decimal digits are found. Each
+        selected digit is placed from left to right according to the order
+        of selection. If four decimal digits are found, those digits are the
+        PVV.
+        """
+        for c in cyphertext:
+            if len(PVV) >= 4:
+                break
+    
+            try:
+                int(c)
+                PVV += c
+            except ValueError:
+                continue
+    
+        """
+        2. If, at the end of the first scan, less than four decimal digits
+        have been selected, a second scan is performed from left to right.
+        During the second scan, all decimal digits are skipped and only nondecimal
+        digits can be processed. Nondecimal digits are converted to decimal
+        digits by subtracting 10. The process proceeds until four digits of
+        PVV are found.
+        """
+        if len(PVV) < 4:
+            for c in cyphertext:
+                if len(PVV) >= 4:
+                    break
+    
+                if (int(c, 16) - 10) >= 0:
+                    PVV += str(int(c, 16) - 10)
+    
+        return PVV            
+
+
     def verify_pin(self, request):
         """
         Get response to DC command
