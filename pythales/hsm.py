@@ -399,10 +399,18 @@ class HSM:
         pin_length = b'04'
         pinblock_format = request.fields['Destination PIN block format']
 
+        if request.fields['Destination PIN block format'] != request.fields['Source PIN block format']:
+            raise ValueError('Cannot translate PIN block from format {} to format {}'.format(request.fields['Source PIN block format'].decode('utf-8'), request.fields['Destination PIN block format'].decode('utf-8')))
+
+        if request.fields['Source PIN block format'] != b'00':
+            raise ValueError('Unsupported PIN block format: {}'.format(request.fields['Source PIN block format'].decode('utf-8')))
+
         decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
 
         if request.fields['Destination Key'][0:1] in [b'U']:
             destination_key = request.fields['Destination Key'][1:]
+        else:
+            destination_key = request.fields['Destination Key']
 
         cipher = DES3.new(binascii.unhexlify(destination_key), DES3.MODE_ECB)
         translated_pin_block = cipher.encrypt(binascii.unhexlify(decrypted_pinblock))

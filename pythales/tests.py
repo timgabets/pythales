@@ -183,6 +183,21 @@ class TestHSM(unittest.TestCase):
             self.hsm._get_visa_pvv(b'4761260000000134', b'1', b'1234', b'DEADDEADDEADDEADBEAFBEAFBEAF')
 
     """
+    hsm.translate_pinblock()
+    """
+    def test_translate_pinblock_different_pinblock_formats(self):
+        data = b'UED4A35D52C9063A1ED4A35D52C9063A1UD39D39EB7C932CF367C97C5B10B2C195127DF366B86AE2D9A70103552000000012'
+        self.ca = CA(data)
+        with self.assertRaisesRegex(ValueError, 'Cannot translate PIN block from format 01 to format 03'):
+            self.hsm.translate_pinblock(self.ca)
+
+    def test_translate_pinblock_unsupported_format(self):
+        data = b'UED4A35D52C9063A1ED4A35D52C9063A1UD39D39EB7C932CF367C97C5B10B2C195127DF366B86AE2D9A70303552000000012'
+        self.ca = CA(data)
+        with self.assertRaisesRegex(ValueError, 'Unsupported PIN block format: 03'):
+            self.hsm.translate_pinblock(self.ca)
+
+    """
     User-defined key
     """
     def test_user_defined_key_wrong_key_size(self):
