@@ -149,6 +149,19 @@ class HSM:
         else:
             self.header = b''
 
+        print(self.info())
+
+    
+    def info(self):
+        """
+        """
+        dump = ''
+        dump += 'LMK: {}\n'.format(binascii.hexlify(self.LMK).decode('utf-8').upper())
+        dump += 'Firmware version: {}\n'.format(self.firmware_version)
+        if self.header:
+            dump += 'Message header: {}\n'.format(self.header.decode('utf-8'))
+        return dump
+
 
     def _init_connection(self):
         try:
@@ -202,8 +215,6 @@ class HSM:
     def _get_clear_key(self, encrypted_key):
         """
         Decrypt the key, encrypted under LMK
-        
-        #return binascii.hexlify(clear_key).decode('utf-8').upper()
         """
         if encrypted_key[0:1] in [b'U']:
             return self.cipher.decrypt(bytes.fromhex(encrypted_key[1:].decode('utf-8')))
@@ -240,6 +251,7 @@ class HSM:
             return bytes(pin, 'utf-8')
         else:
             raise ValueError('Incorrect PIN length: {}'.format(pin_length))
+
     
     def check_key_parity(self, key):
         pass

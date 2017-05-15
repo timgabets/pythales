@@ -1,5 +1,6 @@
 
 May 2017
+	0.31 Showing info on simulator start
 	0.30 Fixed _get_visa_pvv() bug related to TSP data representation
 	0.29 Fixed 'TPK Pair' bug
 	0.28 Checking the key length in _get_visa_pvv()
