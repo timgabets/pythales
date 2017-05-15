@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import HSM, Message, DC
+from pythales.hsm import HSM, Message, CA, DC
 
 class TestMessageClass(unittest.TestCase):
     """
@@ -91,6 +91,44 @@ class TestDC(unittest.TestCase):
 
     def test_pvv_parsed(self):
         self.assertEqual(self.dc.fields['PVV'], b'8723')
+
+
+class TestCA(unittest.TestCase):
+    """
+    18:47:19.371109 << 108 bytes received from 192.168.56.101:33284: 
+        00 6a 53 53 53 53 43 41 55 45 44 34 41 33 35 44         .jSSSSCAUED4A35D
+        35 32 43 39 30 36 33 41 31 45 44 34 41 33 35 44         52C9063A1ED4A35D
+        35 32 43 39 30 36 33 41 31 55 44 33 39 44 33 39         52C9063A1UD39D39
+        45 42 37 43 39 33 32 43 46 33 36 37 43 39 37 43         EB7C932CF367C97C
+        35 42 31 30 42 32 43 31 39 35 31 32 37 44 46 33         5B10B2C195127DF3
+        36 36 42 38 36 41 45 32 44 39 41 37 30 31 30 33         66B86AE2D9A70103
+        35 35 32 30 30 30 30 30 30 30 31 32                     552000000012
+    """
+    def setUp(self):
+        data = b'UED4A35D52C9063A1ED4A35D52C9063A1UD39D39EB7C932CF367C97C5B10B2C195127DF366B86AE2D9A70103552000000012'
+        self.ca = CA(data)
+        self.hsm = HSM(header='SSSS')
+
+    def test_tpk_parsed(self):
+        self.assertEqual(self.ca.fields['TPK'], b'UED4A35D52C9063A1ED4A35D52C9063A1')
+
+    def test_dest_key_parsed(self):
+        self.assertEqual(self.ca.fields['Destination Key'], b'UD39D39EB7C932CF367C97C5B10B2C195')
+
+    def test_max_pin_length_parsed(self):
+        self.assertEqual(self.ca.fields['Maximum PIN Length'], b'12')
+
+    def test_source_pin_block_parsed(self):
+        self.assertEqual(self.ca.fields['Source PIN block'], b'7DF366B86AE2D9A7')
+
+    def test_source_pin_block_format_parsed(self):
+        self.assertEqual(self.ca.fields['Source PIN block format'], b'01')
+
+    def test_dest_pin_block_format_parsed(self):
+        self.assertEqual(self.ca.fields['Destination PIN block format'], b'03')
+
+    def test_account_number_parsed(self):
+        self.assertEqual(self.ca.fields['Account Number'], b'552000000012')
 
 
 class TestHSM(unittest.TestCase):

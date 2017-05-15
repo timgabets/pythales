@@ -18,39 +18,87 @@ class DC():
 
         # TPK
         if self.data[0:1] in [b'U', b'T', b'S']:
-            self.fields['TPK'] = self.data[0:33]
-            self.data = self.data[33:]
+            field_size = 33            
+            self.fields['TPK'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
 
         # PVK
         if self.data[0:1] in [b'U']:
-            self.fields['PVK Pair'] = self.data[0:33]
-            self.data = self.data[33:]
+            field_size = 33            
+            self.fields['PVK Pair'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
         else:
-            self.fields['PVK Pair'] = self.data[0:32]
-            self.data = self.data[32:]
+            field_size = 32
+            self.fields['PVK Pair'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
 
         # PIN block
-        self.fields['PIN block'] = self.data[0:16]
-        self.data = self.data[16:]
+        field_size = 16
+        self.fields['PIN block'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
         # PIN block format code
-        self.fields['PIN block format code'] = self.data[0:2]
-        self.data = self.data[2:]
+        field_size = 2
+        self.fields['PIN block format code'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
         # Account Number
-        self.fields['Account Number'] = self.data[0:12]
-        self.data = self.data[12:]
+        field_size = 12
+        self.fields['Account Number'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
         # PVKI
-        self.fields['PVKI'] = self.data[0:1]
-        self.data = self.data[1:]
+        field_size = 1
+        self.fields['PVKI'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
         # PVV
-        self.fields['PVV'] = self.data[0:4]
-        self.data = self.data[4:]
+        field_size = 4
+        self.fields['PVV'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
-    
 
+class CA():
+    def __init__(self, data):
+        self.data = data
+        self.fields = OrderedDict()
+
+        # TPK
+        if self.data[0:1] in [b'U', b'T', b'S']:
+            field_size = 33
+            self.fields['TPK'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+
+        # Destination Key
+        if self.data[0:1] in [b'U', b'T', b'S']:
+            field_size = 33
+            self.fields['Destination Key'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+
+        # Maximum PIN Length
+        field_size = 2
+        self.fields['Maximum PIN Length'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Source PIN block
+        field_size = 16
+        self.fields['Source PIN block'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Source PIN block format
+        field_size = 2
+        self.fields['Source PIN block format'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Destination PIN block format
+        field_size = 2
+        self.fields['Destination PIN block format'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Account Number
+        field_size = 12
+        self.fields['Account Number'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
 
 class Message:
@@ -78,6 +126,8 @@ class Message:
             
             if self.command_code == b'DC':
                 self.fields = DC(self.data[2:]).fields
+            elif self.command_code == b'CA':
+                self.fields = CA(self.data[2:]).fields
             else:
                 self.fields = None
 
@@ -111,9 +161,9 @@ class Message:
         Build the outgoing message
         """
         if self.header:
-            return struct.pack("!H", len(self.header) + len(data)) + self.header + bytes(data, 'utf-8')
+            return struct.pack("!H", len(self.header) + len(data)) + self.header + data
         else:
-            return struct.pack("!H", len(data)) + bytes(data, 'utf-8')
+            return struct.pack("!H", len(data)) + data
 
 
     def trace(self):
@@ -333,22 +383,34 @@ class HSM:
             pin = self._get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
             pvv = self._get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
             if pvv == request.fields['PVV']:
-                return Message(data=None, header=self.header).build('DD00')
+                return Message(data=None, header=self.header).build(b'DD00')
             else:
-                return Message(data=None, header=self.header).build('DD01')
+                return Message(data=None, header=self.header).build(b'DD01')
 
         except ValueError:
-            return Message(data=None, header=self.header).build('DD01')
+            return Message(data=None, header=self.header).build(b'DD01')
+
+
+    def translate_pinblock(self, request):
+        """
+        Get response to CA command (Translate PIN from TPK to ZPK)
+        """
+        response_code = b'CB00'
+        pin_length = b'04'
+        translated_pin_block = request.fields['Source PIN block']
+        pinblock_format = request.fields['Destination PIN block format']
+
+        return Message(data=None, header=self.header).build(response_code + pin_length + translated_pin_block + pinblock_format)
 
 
     def get_diagnostics_data(self):
         """
         Get response to NC command
         """
-        response_code = 'ND'
-        error_code = '00'
-        lmk_check_value = '1234567890ABCDEF'
-        response_data = response_code + error_code + lmk_check_value + self.firmware_version
+        response_code = b'ND'
+        error_code = b'00'
+        lmk_check_value = b'1234567890ABCDEF'
+        response_data = response_code + error_code + lmk_check_value + bytes(self.firmware_version, 'utf-8')
         return Message(data=None, header=self.header).build(response_data)
 
 
@@ -360,8 +422,10 @@ class HSM:
             return self.get_diagnostics_data()
         elif rqst_command_code == b'DC':
             return self.verify_pin(request)
+        elif rqst_command_code == b'CA':
+            return self.translate_pinblock(request)
         else:
-            return Message(data=None, header=self.header).build('ZZ00')
+            return Message(data=None, header=self.header).build(b'ZZ00')
 
 
 def show_help(name):

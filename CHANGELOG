@@ -1,5 +1,7 @@
 
 May 2017
+	0.34 translate_pinblock() dummy function
+	0.33 CA command support
 	0.32 hsm --key option
 	0.31 Showing info on simulator start
 	0.30 Fixed _get_visa_pvv() bug related to TSP data representation
