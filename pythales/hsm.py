@@ -270,9 +270,9 @@ class HSM:
         Decrypt the key, encrypted under LMK
         """
         if encrypted_key[0:1] in [b'U']:
-            return self.cipher.decrypt(bytes.fromhex(encrypted_key[1:].decode('utf-8')))
+            return self.cipher.decrypt(binascii.unhexlify(encrypted_key[1:]))
         else:
-            return self.cipher.decrypt(bytes.fromhex(encrypted_key.decode('utf-8')))
+            return self.cipher.decrypt(binascii.unhexlify(encrypted_key))
 
 
     def _decrypt_pinblock(self, encrypted_pinblock, encrypted_terminal_key):
@@ -281,7 +281,7 @@ class HSM:
         """
         clear_terminal_key = self._get_clear_key(encrypted_terminal_key)
         cipher = DES3.new(clear_terminal_key, DES3.MODE_ECB)
-        raw = cipher.decrypt(bytes.fromhex(encrypted_pinblock.decode('utf-8')))
+        raw = cipher.decrypt(binascii.unhexlify(encrypted_pinblock))
         return bytes(binascii.hexlify(raw).decode('utf-8').upper(), 'utf-8')
 
 
