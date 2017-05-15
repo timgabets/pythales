@@ -396,7 +396,6 @@ class HSM:
         Get response to CA command (Translate PIN from TPK to ZPK)
         """
         response_code = b'CB00'
-        pin_length = b'04'
         pinblock_format = request.fields['Destination PIN block format']
 
         if request.fields['Destination PIN block format'] != request.fields['Source PIN block format']:
@@ -406,6 +405,7 @@ class HSM:
             raise ValueError('Unsupported PIN block format: {}'.format(request.fields['Source PIN block format'].decode('utf-8')))
 
         decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
+        pin_length = decrypted_pinblock[0:2]
 
         if request.fields['Destination Key'][0:1] in [b'U']:
             destination_key = request.fields['Destination Key'][1:]
