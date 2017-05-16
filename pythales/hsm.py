@@ -24,8 +24,7 @@ def B2raw(bin_data):
     """
     Convert hex representation to raw binary data, e.g. b'DF1267EEDCBA9876' -> b'\xdf\x12g\xee\xdc\xba\x98v'
     """
-    raw_data = b''
-    return raw_data
+    return unhexlify(bin_data)
 
 
 class DC():
