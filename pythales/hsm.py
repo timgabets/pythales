@@ -283,8 +283,8 @@ class HSM:
                 conn.close()
                 continue
 
-        conn.close()
         self.sock.close()
+        print('Exit')
 
 
     def _get_clear_key(self, encrypted_key):
