@@ -1,2 +1,3 @@
 
 * Handling multiple connections
+* Debug mode (showing translated PIN blocks, CVVs, PVVs etc)

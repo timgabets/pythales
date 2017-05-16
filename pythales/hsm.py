@@ -414,8 +414,17 @@ class HSM:
         """
         response =  Message(data=None, header=self.header)
         response.fields['Response Code'] = b'CZ'
-        response.fields['Error Code'] = b'00'
 
+        CVK = request.fields['CVK']
+        if CVK[0:1] in [b'U']:
+            CVK = CVK[1:]
+        
+        cvv = self._get_visa_cvv(request.fields['Primary Account Number'], request.fields['Expiration Date'], request.fields['Service Code'], CVK)
+        if bytes(cvv, 'utf-8') == request.fields['CVV']:
+            response.fields['Error Code'] = b'00'
+        else:
+            response.fields['Error Code'] = b'01'
+            
         return response
 
 
