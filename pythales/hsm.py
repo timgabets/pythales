@@ -445,8 +445,7 @@ class HSM:
         response_code = b'ND'
         error_code = b'00'
         lmk_check_value = b'1234567890ABCDEF'
-        response_data = response_code + error_code + lmk_check_value + bytes(self.firmware_version, 'utf-8')
-        return Message(data=None, header=self.header).build(response_data)
+        return Message(data=None, header=self.header).build(response_code + error_code + lmk_check_value + bytes(self.firmware_version, 'utf-8'))
 
 
     def get_response(self, request):
@@ -473,6 +472,7 @@ def show_help(name):
     print('  -k, --key=[KEY]\t\tTCP port to listen, 1500 by default')
     print('  -h, --header=[HEADER]\t\tmessage header, empty by default')
 
+
 if __name__ == '__main__':
     port = None
     header = ''
@@ -496,6 +496,3 @@ if __name__ == '__main__':
 
     hsm = HSM(port=port, header=header, key=key)
     hsm.run()
-
-
-    
