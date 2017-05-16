@@ -268,7 +268,7 @@ class Message:
 
 
 class HSM:
-    def __init__(self, port=None, header=None, key=None):
+    def __init__(self, port=None, header=None, key=None, debug=False):
         self.firmware_version = '0007-E000'
 
         if port:
@@ -285,7 +285,9 @@ class HSM:
             self.LMK = bytes.fromhex(key)
         else:
             self.LMK = bytes.fromhex('deadbeef deadbeef deadbeef deadbeef')
+        
         self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
+        self.debug = debug
 
     
     def info(self):
@@ -297,6 +299,13 @@ class HSM:
         if self.header:
             dump += 'Message header: {}\n'.format(self.header.decode('utf-8'))
         return dump
+
+
+    def _debug_trace(self, data):
+        """
+        """
+        if self.debug:
+            print('\tDEBUG: {}\n'.format(data))
 
 
     def _init_connection(self):
@@ -423,6 +432,7 @@ class HSM:
         if bytes(cvv, 'utf-8') == request.fields['CVV']:
             response.fields['Error Code'] = b'00'
         else:
+            self._debug_trace('CVV mismatch: {} != {}'.format(cvv, request.fields['CVV'].decode('utf-8')))
             response.fields['Error Code'] = b'01'
             
         return response
@@ -505,6 +515,7 @@ class HSM:
             if pvv == request.fields['PVV']:
                 response.fields['Error Code'] = b'00'
             else:
+                self._debug_trace('PVV mismatch: {} != {}'.format(pvv.decode('utf-8'), request.fields['PVV'].decode('utf-8')))
                 response.fields['Error Code'] = b'01'
             
             return response
@@ -595,8 +606,9 @@ if __name__ == '__main__':
     port = None
     header = ''
     key = None
+    debug = False
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'h:p:k:', ['header=', 'port=', 'key='])
+    optlist, args = getopt.getopt(sys.argv[1:], 'h:p:k:d', ['header=', 'port=', 'key=', 'debug'])
     for opt, arg in optlist:
         if opt in ('-h', '--header'):
             header = arg
@@ -608,9 +620,11 @@ if __name__ == '__main__':
                 sys.exit()
         elif opt in ('-k', '--key'):
             key = arg
+        elif opt in ('-d', '--debug'):
+            debug = True
         else:
             show_help(sys.argv[0])
             sys.exit()
 
-    hsm = HSM(port=port, header=header, key=key)
+    hsm = HSM(port=port, header=header, key=key, debug=debug)
     hsm.run()
