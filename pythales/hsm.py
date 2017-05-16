@@ -297,8 +297,8 @@ class HSM:
         """
         clear_terminal_key = self._get_clear_key(encrypted_terminal_key)
         cipher = DES3.new(clear_terminal_key, DES3.MODE_ECB)
-        raw = cipher.decrypt(B2raw(encrypted_pinblock))
-        return bytes(binascii.hexlify(raw).decode('utf-8').upper(), 'utf-8')
+        decrypted_pinblock = cipher.decrypt(B2raw(encrypted_pinblock))
+        return raw2B(decrypted_pinblock)
 
 
     def _get_clear_pin(self, pinblock, account_number):
