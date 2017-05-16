@@ -286,9 +286,9 @@ class HSM:
         Decrypt the key, encrypted under LMK
         """
         if encrypted_key[0:1] in [b'U']:
-            return self.cipher.decrypt(binascii.unhexlify(encrypted_key[1:]))
+            return self.cipher.decrypt(B2raw(encrypted_key[1:]))
         else:
-            return self.cipher.decrypt(binascii.unhexlify(encrypted_key))
+            return self.cipher.decrypt(B2raw(encrypted_key))
 
 
     def _decrypt_pinblock(self, encrypted_pinblock, encrypted_terminal_key):
@@ -297,7 +297,7 @@ class HSM:
         """
         clear_terminal_key = self._get_clear_key(encrypted_terminal_key)
         cipher = DES3.new(clear_terminal_key, DES3.MODE_ECB)
-        raw = cipher.decrypt(binascii.unhexlify(encrypted_pinblock))
+        raw = cipher.decrypt(B2raw(encrypted_pinblock))
         return bytes(binascii.hexlify(raw).decode('utf-8').upper(), 'utf-8')
 
 
@@ -383,7 +383,7 @@ class HSM:
         left_key_cypher = DES3.new(PVK[:16], DES3.MODE_ECB)
         right_key_cypher = DES3.new(PVK[16:], DES3.MODE_ECB)
 
-        encrypted_raw = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(binascii.unhexlify(tsp)))))
+        encrypted_raw = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(B2raw(tsp)))))
         encrypted_str = binascii.hexlify(encrypted_raw).decode('utf-8').upper()
     
         return bytes(self._get_pvv_digits_from_string(encrypted_str), 'utf-8')
@@ -428,8 +428,8 @@ class HSM:
         else:
             destination_key = request.fields['Destination Key']
 
-        cipher = DES3.new(binascii.unhexlify(destination_key), DES3.MODE_ECB)
-        translated_pin_block = cipher.encrypt(binascii.unhexlify(decrypted_pinblock))
+        cipher = DES3.new(B2raw(destination_key), DES3.MODE_ECB)
+        translated_pin_block = cipher.encrypt(B2raw(decrypted_pinblock))
 
         return Message(data=None, header=self.header).build(response_code + pin_length + binascii.hexlify(translated_pin_block) + pinblock_format)
 
