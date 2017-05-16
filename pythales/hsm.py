@@ -7,7 +7,7 @@ import struct
 
 from tracetools.tracetools import trace
 from collections import OrderedDict
-from Crypto.Cipher import DES3
+from Crypto.Cipher import DES, DES3
 from binascii import hexlify, unhexlify
 
 
@@ -398,10 +398,14 @@ class HSM:
         if len(CVK) != 32:
             raise ValueError('Incorrect key length')
         
-        left_key_cypher = DES3.new(CVK[:16], DES3.MODE_ECB)
-        right_key_cypher = DES3.new(CVK[16:], DES3.MODE_ECB)
+        tsp = exp_date + service_code + b'000000000'
+        des_cipher = DES.new(B2raw(CVK[:16]))
+        des3_cipher = DES3.new(B2raw(CVK), DES3.MODE_ECB)
+        
+        block1 = xor(raw2B(des_cipher.encrypt(B2raw(account_number))), tsp)
+        block2 = raw2B(des3_cipher.encrypt(B2raw(block1)))
+        return block2
 
-        left_key_cypher.encrypt(B2raw(account_number)) 
 
     def verify_cvv(self, request):
         """
@@ -414,7 +418,7 @@ class HSM:
         return response
 
 
-    def _get_pvv_digits_from_string(self, cyphertext):
+    def _get_digits_from_string(self, cyphertext):
         """
         Extract PVV digits from the cyphertext (HEX-encoded string)
         """
@@ -472,7 +476,7 @@ class HSM:
         right_key_cypher = DES3.new(PVK[16:], DES3.MODE_ECB)
 
         encrypted_tsp = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(B2raw(tsp)))))
-        return bytes(self._get_pvv_digits_from_string(raw2str(encrypted_tsp)), 'utf-8')
+        return bytes(self._get_digits_from_string(raw2str(encrypted_tsp)), 'utf-8')
 
 
     def verify_pin(self, request):

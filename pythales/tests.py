@@ -228,16 +228,16 @@ class TestHSM(unittest.TestCase):
 
 
     """
-    hsm._get_pvv_digits_from_string()
+    hsm._get_digits_from_string()
     """
-    def test_get_pvv_digits_from_string(self):
-        self.assertEqual(self.hsm._get_pvv_digits_from_string('59EF34AD722C0556F7F6FBD4A76D38E6'), '5934')
+    def test_get_digits_from_string(self):
+        self.assertEqual(self.hsm._get_digits_from_string('59EF34AD722C0556F7F6FBD4A76D38E6'), '5934')
 
     def test_get_pvv_digits_from_mixed_string(self):
-        self.assertEqual(self.hsm._get_pvv_digits_from_string('EEFADCFFFBD7ADECAB9FBB'), '7944')
+        self.assertEqual(self.hsm._get_digits_from_string('EEFADCFFFBD7ADECAB9FBB'), '7944')
 
-    def test_get_pvv_digits_from_string_letters_only(self):
-        self.assertEqual(self.hsm._get_pvv_digits_from_string('EFADCFFFBDADECABFBB'), '4503')
+    def test_get_digits_from_string_letters_only(self):
+        self.assertEqual(self.hsm._get_digits_from_string('EFADCFFFBDADECABFBB'), '4503')
 
     """
     hsm._get_visa_pvv()
@@ -252,8 +252,8 @@ class TestHSM(unittest.TestCase):
     """
     hsm._get_visa_cvv()
     """
-    #def test_get_visa_cvv(self):
-    #    self.assertEqual(self.hsm._get_visa_cvv(b'4433678298261175 ', b'0916', b'101', b'4C37C8319D76ADAB58D9431543C2165B'), b'478')
+    def test_get_visa_cvv(self):
+        self.assertEqual(self.hsm._get_visa_cvv(b'4433678298261175', b'0916', b'101', b'4C37C8319D76ADAB58D9431543C2165B'), b'B4C78A032A4F6551')
 
     """
     hsm.translate_pinblock()
