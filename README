@@ -4,3 +4,4 @@ pythales
 A primitive implementation of Thales HSM (hardware security module) simulator. Only the basic HSM commands are implemented:
 * NC - Diagnostics information
 * DC - Verify PIN
+* CA - Translate PIN from TPK to ZPK 
