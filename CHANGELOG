@@ -1,5 +1,6 @@
 
 May 2017
+	0.37 Trace parsed outgoing message
 	0.36 Outgoing message build() and trace() refactored
 	0.35 raw2B() and B2raw() conversion tools
 	0.34 translate_pinblock() dummy function

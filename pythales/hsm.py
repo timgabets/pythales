@@ -179,18 +179,9 @@ class Message:
         return self.data
 
 
-    def _build(self, data):
-        """
-        Build the outgoing message (legacy)
-        """
-        if self.header:
-            return struct.pack("!H", len(self.header) + len(data)) + self.header + data
-        else:
-            return struct.pack("!H", len(data)) + data
-
-
     def build(self):
         """
+        Build the outgoing message (legacy)
         """
         data = b''
         for key, value in self.fields.items():
@@ -200,7 +191,6 @@ class Message:
             return struct.pack("!H", len(self.header) + len(data)) + self.header + data
         else:
             return struct.pack("!H", len(data)) + data
-
 
 
     def trace(self):
@@ -290,6 +280,7 @@ class HSM:
                     conn.send(response_data)
 
                     trace('>> {} bytes sent to {}:'.format(len(response_data), client_name), response_data)
+                    print(response.trace())
     
             except KeyboardInterrupt:
                 break
