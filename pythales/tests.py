@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import raw2str, raw2B, B2raw, get_key_check_value, HSM, Message, CA, CY, DC
+from pythales.hsm import xor, raw2str, raw2B, B2raw, get_key_check_value, HSM, Message, CA, CY, DC
 
 
 class TestConversionTools(unittest.TestCase):
@@ -30,6 +30,10 @@ class TestCryptoTools(unittest.TestCase):
 
     def test_get_key_check_value_16(self):
         self.assertEqual(get_key_check_value(b'E6F1081FEA4C402CC192B65DE367EC3E', 16), b'212CF9158251CDD3')
+
+    def test_xor(self):
+        self.assertEqual(xor(b'0916101000000000', b'C19F07316463054E'), b'C88917216463054E')        
+
 
 class TestMessageClass(unittest.TestCase):
     """
@@ -244,6 +248,12 @@ class TestHSM(unittest.TestCase):
     def test_get_visa_pvv_incorrect_key(self):
         with self.assertRaisesRegex(ValueError, 'Incorrect key length'):
             self.hsm._get_visa_pvv(b'4761260000000134', b'1', b'1234', b'DEADDEADDEADDEADBEAFBEAFBEAF')
+
+    """
+    hsm._get_visa_cvv()
+    """
+    #def test_get_visa_cvv(self):
+    #    self.assertEqual(self.hsm._get_visa_cvv(b'4433678298261175 ', b'0916', b'101', b'4C37C8319D76ADAB58D9431543C2165B'), b'478')
 
     """
     hsm.translate_pinblock()

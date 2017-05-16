@@ -43,6 +43,14 @@ def get_key_check_value(key, kcv_length=6):
     return encrypted[:kcv_length]
 
 
+def xor(block1, block2):
+    """
+    XOR two blocks of data
+    """
+    xored = ''.join(['{0:#0{1}x}'.format((i ^ j), 4)[2:] for i, j in zip(B2raw(block1), B2raw(block2))])
+    return bytes(xored.upper(), 'utf-8')
+
+
 class DC():
     def __init__(self, data):
         self.data = data
@@ -370,7 +378,7 @@ class HSM:
         raw_pinblock = bytes.fromhex(pinblock.decode('utf-8'))
         raw_acct_num = bytes.fromhex((b'0000' + account_number).decode('utf-8'))
             
-        pin_str = ''.join(['{0:#0{1}x}'.format((i ^ j), 4)[2:] for i, j in zip(raw_pinblock, raw_acct_num)])
+        pin_str = ''.join(['{0:#0{1}x}'.format((i ^ j), 4)[2:] for i, j in zip(raw_pinblock, raw_acct_num)]) # TODO: use xor()
         pin_length = int(pin_str[:2], 16)
         
         if pin_length >= 4 and pin_length < 9:
@@ -382,6 +390,28 @@ class HSM:
             return bytes(pin, 'utf-8')
         else:
             raise ValueError('Incorrect PIN length: {}'.format(pin_length))
+
+
+    def _get_visa_cvv(self, account_number, exp_date, service_code, CVK):
+        """
+        """
+        if len(CVK) != 32:
+            raise ValueError('Incorrect key length')
+        
+        left_key_cypher = DES3.new(CVK[:16], DES3.MODE_ECB)
+        right_key_cypher = DES3.new(CVK[16:], DES3.MODE_ECB)
+
+        left_key_cypher.encrypt(B2raw(account_number)) 
+
+    def verify_cvv(self, request):
+        """
+        Get response to CY command
+        """
+        response =  Message(data=None, header=self.header)
+        response.fields['Response Code'] = b'CZ'
+        response.fields['Error Code'] = b'00'
+
+        return response
 
 
     def _get_pvv_digits_from_string(self, cyphertext):
@@ -443,16 +473,6 @@ class HSM:
 
         encrypted_tsp = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(B2raw(tsp)))))
         return bytes(self._get_pvv_digits_from_string(raw2str(encrypted_tsp)), 'utf-8')
-
-
-    def verify_cvv(self, request):
-        """
-        Get response to CY command
-        """
-        response =  Message(data=None, header=self.header)
-        response.fields['Response Code'] = b'CZ'
-        response.fields['Error Code'] = b'00'
-        return response
 
 
     def verify_pin(self, request):
