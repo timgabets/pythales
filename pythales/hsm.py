@@ -133,6 +133,43 @@ class CA():
         self.data = self.data[field_size:]
 
 
+class CY():
+    def __init__(self, data):
+        self.data = data
+        self.fields = OrderedDict()
+
+        # CVK
+        if self.data[0:1] in [b'U', b'T', b'S']:
+            field_size = 33
+            self.fields['CVK'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+
+        # CVV
+        field_size = 3
+        self.fields['CVV'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Primary Account Number
+        delimiter_index = 0
+        for byte in self.data:
+            if byte == 59:  # b';'
+                break
+            delimiter_index += 1
+
+        self.fields['Primary Account Number'] = self.data[0:delimiter_index]
+        self.data = self.data[delimiter_index + 1:]
+
+        # Expiration Date
+        field_size = 4
+        self.fields['Expiration Date'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Service Code
+        field_size = 3
+        self.fields['Service Code'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+
 class Message:
     def __init__(self, data=None, header=None):
         if data:
@@ -343,10 +380,6 @@ class HSM:
             return bytes(pin, 'utf-8')
         else:
             raise ValueError('Incorrect PIN length: {}'.format(pin_length))
-
-    
-    def check_key_parity(self, key):
-        pass
 
 
     def _get_pvv_digits_from_string(self, cyphertext):

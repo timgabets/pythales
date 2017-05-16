@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import raw2str, raw2B, B2raw, get_key_check_value, HSM, Message, CA, DC
+from pythales.hsm import raw2str, raw2B, B2raw, get_key_check_value, HSM, Message, CA, CY, DC
 
 
 class TestConversionTools(unittest.TestCase):
@@ -162,6 +162,36 @@ class TestCA(unittest.TestCase):
 
     def test_account_number_parsed(self):
         self.assertEqual(self.ca.fields['Account Number'], b'552000000012')
+
+
+class TestCY(unittest.TestCase):
+    """
+    00 42 53 53 53 53 43 59 55 34 34 39 44 46 31 36         .BSSSSCYU449DF16
+    37 39 46 34 41 34 45 30 36 39 35 45 39 39 44 39         79F4A4E0695E99D9
+    32 31 41 32 35 33 44 43 42 30 30 30 38 39 39 30         21A253DCB0008990
+    30 31 31 32 33 34 35 36 37 38 39 30 3b 31 38 30         011234567890;180
+    39 32 30 31                                             9201
+
+    """
+    def setUp(self):
+        data = b'U449DF1679F4A4E0695E99D921A253DCB0008990011234567890;1809201'
+        self.cy = CY(data)
+        self.hsm = HSM(header='SSSS')
+
+    def test_cvk_parsed(self):
+        self.assertEqual(self.cy.fields['CVK'], b'U449DF1679F4A4E0695E99D921A253DCB')
+
+    def test_cvv_parsed(self):
+        self.assertEqual(self.cy.fields['CVV'], b'000')
+
+    def test_account_number_parsed(self):
+        self.assertEqual(self.cy.fields['Primary Account Number'], b'8990011234567890')
+
+    def test_expiry_date_parsed(self):
+        self.assertEqual(self.cy.fields['Expiration Date'], b'1809')
+
+    def test_service_code_parsed(self):
+        self.assertEqual(self.cy.fields['Service Code'], b'201')
 
 
 class TestHSM(unittest.TestCase):
