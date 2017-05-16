@@ -2,20 +2,7 @@
 
 import unittest
 
-from pythales.hsm import xor, raw2str, raw2B, B2raw, get_key_check_value, HSM, Message, CA, CY, DC
-
-
-class TestConversionTools(unittest.TestCase):
-    """
-    """
-    def test_raw2str(self):
-        self.assertEqual(raw2str(b'\xdf\x12g\xee\xdc\xba\x98v'), 'DF1267EEDCBA9876')
-
-    def test_raw2B(self):
-        self.assertEqual(raw2B(b'\xdf\x12g\xee\xdc\xba\x98v'), b'DF1267EEDCBA9876')
-
-    def test_B2raw(self):
-        self.assertEqual(B2raw(b'DF1267EEDCBA9876'), b'\xdf\x12g\xee\xdc\xba\x98v')
+from pythales.hsm import get_key_check_value, HSM, Message, CA, CY, DC
 
 
 class TestCryptoTools(unittest.TestCase):
@@ -30,9 +17,6 @@ class TestCryptoTools(unittest.TestCase):
 
     def test_get_key_check_value_16(self):
         self.assertEqual(get_key_check_value(b'E6F1081FEA4C402CC192B65DE367EC3E', 16), b'212CF9158251CDD3')
-
-    def test_xor(self):
-        self.assertEqual(xor(b'0916101000000000', b'C19F07316463054E'), b'C88917216463054E')        
 
 
 class TestMessageClass(unittest.TestCase):

@@ -9,28 +9,7 @@ from tracetools.tracetools import trace
 from collections import OrderedDict
 from Crypto.Cipher import DES, DES3
 from binascii import hexlify, unhexlify
-
-
-def raw2str(raw_data):
-    """
-    Convert raw binary data to string representation, e.g. b'\xdf\x12g\xee\xdc\xba\x98v'-> 'DF1267EEDCBA9876'
-    """
-    return hexlify(raw_data).decode('utf-8').upper()
-
-
-def raw2B(raw_data):
-    """
-    Convert raw binary data to hex representation, e.g. b'\xdf\x12g\xee\xdc\xba\x98v'-> b'DF1267EEDCBA9876'
-
-    """
-    return bytes(raw2str(raw_data), 'utf-8')
-
-
-def B2raw(bin_data):
-    """
-    Convert hex representation to raw binary data, e.g. b'DF1267EEDCBA9876' -> b'\xdf\x12g\xee\xdc\xba\x98v'
-    """
-    return unhexlify(bin_data)
+from pynblock.tools import raw2str, raw2B, B2raw, xor
 
 
 def get_key_check_value(key, kcv_length=6):
@@ -41,14 +20,6 @@ def get_key_check_value(key, kcv_length=6):
     encrypted = raw2B(cipher.encrypt(B2raw(b'00000000000000000000000000000000')))
 
     return encrypted[:kcv_length]
-
-
-def xor(block1, block2):
-    """
-    XOR two blocks of data
-    """
-    xored = ''.join(['{0:#0{1}x}'.format((i ^ j), 4)[2:] for i, j in zip(B2raw(block1), B2raw(block2))])
-    return bytes(xored.upper(), 'utf-8')
 
 
 class DC():

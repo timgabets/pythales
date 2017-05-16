@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='pythales',
-      version='0.41',
+      version='0.42',
       
       description='python thales hsm simulator',
       long_description=open('README').read(),
@@ -29,5 +29,5 @@ setup(name='pythales',
       
       license='LGPLv2',
       packages=['pythales'],
-      install_requires=['pycrypto', 'tracetools'],
+      install_requires=['pycrypto', 'tracetools', 'pynblock'],
       zip_safe=True)
