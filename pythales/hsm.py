@@ -12,12 +12,19 @@ from Crypto.Cipher import DES3
 from binascii import hexlify, unhexlify
 
 
+def raw2str(raw_data):
+    """
+    Convert raw binary data to string representation, e.g. b'\xdf\x12g\xee\xdc\xba\x98v'-> 'DF1267EEDCBA9876'
+    """
+    return hexlify(raw_data).decode('utf-8').upper()
+
+
 def raw2B(raw_data):
     """
     Convert raw binary data to hex representation, e.g. b'\xdf\x12g\xee\xdc\xba\x98v'-> b'DF1267EEDCBA9876'
 
     """
-    return bytes(hexlify(raw_data).decode('utf-8').upper(), 'utf-8')
+    return bytes(raw2str(raw_data), 'utf-8')
 
 
 def B2raw(bin_data):
@@ -224,7 +231,7 @@ class HSM:
         """
         """
         dump = ''
-        dump += 'LMK: {}\n'.format(binascii.hexlify(self.LMK).decode('utf-8').upper())
+        dump += 'LMK: {}\n'.format(raw2str(self.LMK))
         dump += 'Firmware version: {}\n'.format(self.firmware_version)
         if self.header:
             dump += 'Message header: {}\n'.format(self.header.decode('utf-8'))
@@ -383,10 +390,8 @@ class HSM:
         left_key_cypher = DES3.new(PVK[:16], DES3.MODE_ECB)
         right_key_cypher = DES3.new(PVK[16:], DES3.MODE_ECB)
 
-        encrypted_raw = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(B2raw(tsp)))))
-        encrypted_str = binascii.hexlify(encrypted_raw).decode('utf-8').upper()
-    
-        return bytes(self._get_pvv_digits_from_string(encrypted_str), 'utf-8')
+        encrypted_tsp = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(B2raw(tsp)))))
+        return bytes(self._get_pvv_digits_from_string(raw2str(encrypted_tsp)), 'utf-8')
 
 
     def verify_pin(self, request):
