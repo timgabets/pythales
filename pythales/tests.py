@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import raw2str, raw2B, B2raw, HSM, Message, CA, DC
+from pythales.hsm import raw2str, raw2B, B2raw, get_key_check_value, HSM, Message, CA, DC
 
 
 class TestConversionTools(unittest.TestCase):
@@ -17,6 +17,19 @@ class TestConversionTools(unittest.TestCase):
     def test_B2raw(self):
         self.assertEqual(B2raw(b'DF1267EEDCBA9876'), b'\xdf\x12g\xee\xdc\xba\x98v')
 
+
+class TestCryptoTools(unittest.TestCase):
+    def test_get_key_check_value_default_kcv_length(self):
+        self.assertEqual(get_key_check_value(b'E6F1081FEA4C402CC192B65DE367EC3E'), b'212CF9')
+
+    def test_get_key_check_value_4(self):
+        self.assertEqual(get_key_check_value(b'E6F1081FEA4C402CC192B65DE367EC3E', 4), b'212C')
+
+    def test_get_key_check_value_6(self):
+        self.assertEqual(get_key_check_value(b'E6F1081FEA4C402CC192B65DE367EC3E', 6), b'212CF9')
+
+    def test_get_key_check_value_16(self):
+        self.assertEqual(get_key_check_value(b'E6F1081FEA4C402CC192B65DE367EC3E', 16), b'212CF9158251CDD3')
 
 class TestMessageClass(unittest.TestCase):
     """

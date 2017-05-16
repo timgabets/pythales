@@ -33,6 +33,16 @@ def B2raw(bin_data):
     return unhexlify(bin_data)
 
 
+def get_key_check_value(key, kcv_length=6):
+    """
+    Get DES key check value
+    """
+    cipher = DES3.new(B2raw(key), DES3.MODE_ECB)
+    encrypted = raw2B(cipher.encrypt(B2raw(b'00000000000000000000000000000000')))
+
+    return encrypted[:kcv_length]
+
+
 class DC():
     def __init__(self, data):
         self.data = data
@@ -465,8 +475,7 @@ class HSM:
         response = Message(data=None, header=self.header)
         response.fields['Response Code'] = b'ND' 
         response.fields['Error Code'] = b'00' 
-        # TODO: non-dummy check value
-        response.fields['LMK Check Value'] = b'1234567890ABCDEF'
+        response.fields['LMK Check Value'] = get_key_check_value(self.LMK, 16)
         response.fields['Firmware Version'] = bytes(self.firmware_version, 'utf-8')
         return response
 
