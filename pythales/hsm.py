@@ -475,7 +475,7 @@ class HSM:
         response = Message(data=None, header=self.header)
         response.fields['Response Code'] = b'ND' 
         response.fields['Error Code'] = b'00' 
-        response.fields['LMK Check Value'] = get_key_check_value(self.LMK, 16)
+        response.fields['LMK Check Value'] = get_key_check_value(raw2B(self.LMK), 16)
         response.fields['Firmware Version'] = bytes(self.firmware_version, 'utf-8')
         return response
 
