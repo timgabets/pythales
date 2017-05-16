@@ -352,6 +352,7 @@ class HSM:
                 break
             
             except:
+                print('RUNTIME ERROR: {}\n'.format(sys.exc_info()[1]))
                 print('Disconnected client: {}'.format(client_name))
                 conn.close()
                 continue
@@ -387,7 +388,7 @@ class HSM:
         raw_pinblock = bytes.fromhex(pinblock.decode('utf-8'))
         raw_acct_num = bytes.fromhex((b'0000' + account_number).decode('utf-8'))
             
-        pin_str = ''.join(['{0:#0{1}x}'.format((i ^ j), 4)[2:] for i, j in zip(raw_pinblock, raw_acct_num)]) # TODO: use xor()
+        pin_str = xor(raw2B(raw_pinblock), raw2B(raw_acct_num)).decode('utf-8')
         pin_length = int(pin_str[:2], 16)
         
         if pin_length >= 4 and pin_length < 9:
