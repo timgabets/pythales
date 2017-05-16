@@ -197,6 +197,8 @@ class Message:
                 self.fields = DC(self.data[2:]).fields
             elif self.command_code == b'CA':
                 self.fields = CA(self.data[2:]).fields
+            elif self.command_code == b'CY':
+                self.fields = CY(self.data[2:]).fields
             else:
                 self.fields = None
 
@@ -443,6 +445,16 @@ class HSM:
         return bytes(self._get_pvv_digits_from_string(raw2str(encrypted_tsp)), 'utf-8')
 
 
+    def verify_cvv(self, request):
+        """
+        Get response to CY command
+        """
+        response =  Message(data=None, header=self.header)
+        response.fields['Response Code'] = b'CZ'
+        response.fields['Error Code'] = b'00'
+        return response
+
+
     def verify_pin(self, request):
         """
         Get response to DC command
@@ -523,6 +535,8 @@ class HSM:
             return self.verify_pin(request)
         elif rqst_command_code == b'CA':
             return self.translate_pinblock(request)
+        elif rqst_command_code == b'CY':
+            return self.verify_cvv(request)
         else:
             response = Message(data=None, header=self.header)
             response.fields['Response Code'] = b'ZZ'
