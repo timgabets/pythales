@@ -158,6 +158,7 @@ class Message:
             Outgoing message
             """
             self.header = header
+            self.fields = OrderedDict()
 
     
     def get_command_code(self):
@@ -178,14 +179,28 @@ class Message:
         return self.data
 
 
-    def build(self, data):
+    def _build(self, data):
         """
-        Build the outgoing message
+        Build the outgoing message (legacy)
         """
         if self.header:
             return struct.pack("!H", len(self.header) + len(data)) + self.header + data
         else:
             return struct.pack("!H", len(data)) + data
+
+
+    def build(self):
+        """
+        """
+        data = b''
+        for key, value in self.fields.items():
+            data += value
+
+        if self.header:
+            return struct.pack("!H", len(self.header) + len(data)) + self.header + data
+        else:
+            return struct.pack("!H", len(data)) + data
+
 
 
     def trace(self):
@@ -238,11 +253,11 @@ class HSM:
 
 
     def _init_connection(self):
-        print(self.info())
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.bind(('', self.port))   
             self.sock.listen(5)
+            print(self.info())
             print('Listening on port {}'.format(self.port))
         except OSError as msg:
             print('Error starting server: {}'.format(msg))
@@ -271,9 +286,10 @@ class HSM:
                         continue
 
                     response = self.get_response(request)
-                    conn.send(response)
+                    response_data = response.build()
+                    conn.send(response_data)
 
-                    trace('>> {} bytes sent to {}:'.format(len(response), client_name), response)
+                    trace('>> {} bytes sent to {}:'.format(len(response_data), client_name), response_data)
     
             except KeyboardInterrupt:
                 break
@@ -398,22 +414,28 @@ class HSM:
         Get response to DC command
         """
         decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
+        response =  Message(data=None, header=self.header)
+        response.fields['Response Code'] = b'DD'
 
         try:
             pin = self._get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
             pvv = self._get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
             if pvv == request.fields['PVV']:
-                return Message(data=None, header=self.header).build(b'DD00')
+                response.fields['Error Code'] = b'00'
             else:
-                return Message(data=None, header=self.header).build(b'DD01')
+                response.fields['Error Code'] = b'01'
+            
+            return response
 
         except ValueError:
-            return Message(data=None, header=self.header).build(b'DD01')
+            response.fields['Error Code'] = b'01'
+            return response
 
 
     def translate_pinblock(self, request):
         """
         Get response to CA command (Translate PIN from TPK to ZPK)
+        TODO: return Message object
         """
         response_code = b'CB00'
         pinblock_format = request.fields['Destination PIN block format']
@@ -435,17 +457,27 @@ class HSM:
         cipher = DES3.new(B2raw(destination_key), DES3.MODE_ECB)
         translated_pin_block = cipher.encrypt(B2raw(decrypted_pinblock))
 
-        return Message(data=None, header=self.header).build(response_code + pin_length + raw2B(translated_pin_block) + pinblock_format)
+        response = Message(data=None, header=self.header)
+        response.fields['Response Code'] = b'CB'
+        response.fields['Error Code'] = b'00'
+        response.fields['PIN Length'] = decrypted_pinblock[0:2]
+        response.fields['Destination PIN Block'] = raw2B(translated_pin_block)
+        response.fields['Destination PIN Block format'] = pinblock_format
+
+        return response
 
 
     def get_diagnostics_data(self):
         """
         Get response to NC command
         """
-        response_code = b'ND'
-        error_code = b'00'
-        lmk_check_value = b'1234567890ABCDEF'
-        return Message(data=None, header=self.header).build(response_code + error_code + lmk_check_value + bytes(self.firmware_version, 'utf-8'))
+        response = Message(data=None, header=self.header)
+        response.fields['Response Code'] = b'ND' 
+        response.fields['Error Code'] = b'00' 
+        # TODO: non-dummy check value
+        response.fields['LMK Check Value'] = b'1234567890ABCDEF'
+        response.fields['Firmware Version'] = bytes(self.firmware_version, 'utf-8')
+        return response
 
 
     def get_response(self, request):
@@ -459,7 +491,10 @@ class HSM:
         elif rqst_command_code == b'CA':
             return self.translate_pinblock(request)
         else:
-            return Message(data=None, header=self.header).build(b'ZZ00')
+            response = Message(data=None, header=self.header)
+            response.fields['Response Code'] = b'ZZ'
+            response.fields['Error Code'] = b'00'
+            return response
 
 
 def show_help(name):

@@ -61,12 +61,18 @@ class TestMessageClass(unittest.TestCase):
 
     def test_outgoing_message(self):
         m = Message(data=None, header=b'XXXX')
-        self.assertEqual(m.build(b'NG007444321'), b'\x00\x0FXXXXNG007444321')
+        m.fields['Command Code'] = b'NG'
+        m.fields['Response Code'] = b'00'
+        m.fields['Data'] = b'7444321'
+        self.assertEqual(m.build(), b'\x00\x0FXXXXNG007444321')
 
 
     def test_outgoing_message_no_header(self):
         m = Message(data=None, header=None)
-        self.assertEqual(m.build(b'NG007444321'), b'\x00\x0BNG007444321')
+        m.fields['Command Code'] = b'NG'
+        m.fields['Response Code'] = b'00'
+        m.fields['Data'] = b'7444321'
+        self.assertEqual(m.build(), b'\x00\x0BNG007444321')
 
 
 class TestDC(unittest.TestCase):
@@ -214,7 +220,8 @@ class TestHSM(unittest.TestCase):
     def test_translate_pinblock(self):
         data = b'UED4A35D52C9063A1ED4A35D52C9063A1UD39D39EB7C932CF367C97C5B10B2C195127DF366B86AE2D9A70101552000000012'
         self.ca = CA(data)
-        self.assertEqual(self.hsm.translate_pinblock(self.ca), b'\x00\x1cSSSSCB0004EEBCB810144AEC3301')   
+        response = self.hsm.translate_pinblock(self.ca)
+        self.assertEqual(response.build(), b'\x00\x1cSSSSCB0004EEBCB810144AEC3301')   
 
     """
     User-defined key
