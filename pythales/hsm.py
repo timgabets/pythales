@@ -421,7 +421,7 @@ class HSM:
         if request.fields['Destination PIN block format'] != request.fields['Source PIN block format']:
             raise ValueError('Cannot translate PIN block from format {} to format {}'.format(request.fields['Source PIN block format'].decode('utf-8'), request.fields['Destination PIN block format'].decode('utf-8')))
 
-        if request.fields['Source PIN block format'] != b'00':
+        if request.fields['Source PIN block format'] != b'01':
             raise ValueError('Unsupported PIN block format: {}'.format(request.fields['Source PIN block format'].decode('utf-8')))
 
         decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
