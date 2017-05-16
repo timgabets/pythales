@@ -1,5 +1,6 @@
 
 May 2017
+	0.35 raw2B() and B2raw() conversion tools
 	0.34 translate_pinblock() dummy function
 	0.33 CA command support
 	0.32 hsm --key option

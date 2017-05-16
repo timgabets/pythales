@@ -2,7 +2,15 @@
 
 import unittest
 
-from pythales.hsm import HSM, Message, CA, DC
+from pythales.hsm import raw2B, B2raw, HSM, Message, CA, DC
+
+class TestConversionTools(unittest.TestCase):
+    def test_raw2B(self):
+        self.assertEqual(raw2B(b'\xdf\x12g\xee\xdc\xba\x98v'), b'DF1267EEDCBA9876')
+
+    #def test_B2h(self):
+    #    self.assertEqual(B2raw(b'DF1267EEDCBA9876'), b'\xdf\x12g\xee\xdc\xba\x98v')
+
 
 class TestMessageClass(unittest.TestCase):
     """

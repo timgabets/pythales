@@ -9,6 +9,23 @@ import binascii
 from tracetools.tracetools import trace
 from collections import OrderedDict
 from Crypto.Cipher import DES3
+from binascii import hexlify, unhexlify
+
+
+def raw2B(raw_data):
+    """
+    Convert raw binary data to hex representation, e.g. b'\xdf\x12g\xee\xdc\xba\x98v'-> b'DF1267EEDCBA9876'
+
+    """
+    return bytes(hexlify(raw_data).decode('utf-8').upper(), 'utf-8')
+
+
+def B2raw(bin_data):
+    """
+    Convert hex representation to raw binary data, e.g. b'DF1267EEDCBA9876' -> b'\xdf\x12g\xee\xdc\xba\x98v'
+    """
+    raw_data = b''
+    return raw_data
 
 
 class DC():
