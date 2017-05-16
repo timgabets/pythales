@@ -435,7 +435,7 @@ class HSM:
         cipher = DES3.new(B2raw(destination_key), DES3.MODE_ECB)
         translated_pin_block = cipher.encrypt(B2raw(decrypted_pinblock))
 
-        return Message(data=None, header=self.header).build(response_code + pin_length + hexlify(translated_pin_block) + pinblock_format)
+        return Message(data=None, header=self.header).build(response_code + pin_length + raw2B(translated_pin_block) + pinblock_format)
 
 
     def get_diagnostics_data(self):
