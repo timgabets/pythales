@@ -1,5 +1,6 @@
 
 May 2017
+	0.40 CY command support (Verify a Card Verification Code/Value)
 	0.39 xor()
 	0.38 get_key_check_value() + non-dummy LMK check value in NC response command
 	0.37 Trace parsed outgoing message

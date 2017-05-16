@@ -403,8 +403,9 @@ class HSM:
         des3_cipher = DES3.new(B2raw(CVK), DES3.MODE_ECB)
         
         block1 = xor(raw2B(des_cipher.encrypt(B2raw(account_number))), tsp)
-        block2 = raw2B(des3_cipher.encrypt(B2raw(block1)))
-        return block2
+        block2 = des3_cipher.encrypt(B2raw(block1))
+
+        return self._get_digits_from_string(raw2str(block2), 3)
 
 
     def verify_cvv(self, request):
@@ -418,26 +419,28 @@ class HSM:
         return response
 
 
-    def _get_digits_from_string(self, cyphertext):
+    def _get_digits_from_string(self, cyphertext, length=4):
         """
-        Extract PVV digits from the cyphertext (HEX-encoded string)
+        Extract PVV/CVV digits from the cyphertext (HEX-encoded string)
         """
-        PVV = ''
+        digits = ''
     
         """
+        The algorigthm is used for PVV and CVV calculation.
+
         1. The cyphertext is scanned from left to right. Decimal digits are
-        selected during the scan until four decimal digits are found. Each
-        selected digit is placed from left to right according to the order
-        of selection. If four decimal digits are found, those digits are the
-        PVV.
+        selected during the scan until the needed number of decimal digits is found. 
+        Each selected digit is placed from left to right according to the order
+        of selection. If needed number of decimal digits is found (four in case of PVV, 
+        three in case of CVV), those digits are the PVV or CVV.
         """
         for c in cyphertext:
-            if len(PVV) >= 4:
+            if len(digits) >= length:
                 break
     
             try:
                 int(c)
-                PVV += c
+                digits += c
             except ValueError:
                 continue
     
@@ -449,15 +452,15 @@ class HSM:
         digits by subtracting 10. The process proceeds until four digits of
         PVV are found.
         """
-        if len(PVV) < 4:
+        if len(digits) < length:
             for c in cyphertext:
-                if len(PVV) >= 4:
+                if len(digits) >= length:
                     break
     
                 if (int(c, 16) - 10) >= 0:
-                    PVV += str(int(c, 16) - 10)
+                    digits += str(int(c, 16) - 10)
     
-        return PVV
+        return digits
 
 
     def _get_visa_pvv(self, account_number, key_index, pin, PVK):
