@@ -600,6 +600,7 @@ def show_help(name):
     print('  -p, --port=[PORT]\t\tTCP port to listen, 1500 by default')
     print('  -k, --key=[KEY]\t\tTCP port to listen, 1500 by default')
     print('  -h, --header=[HEADER]\t\tmessage header, empty by default')
+    print('  -d, --debug\t\t\tEnable debug mode (show CVV/PVV mismatch etc)')
 
 
 if __name__ == '__main__':
