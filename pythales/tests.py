@@ -2,21 +2,7 @@
 
 import unittest
 
-from pythales.hsm import get_key_check_value, HSM, Message, CA, CY, DC
-
-
-class TestCryptoTools(unittest.TestCase):
-    def test_get_key_check_value_default_kcv_length(self):
-        self.assertEqual(get_key_check_value(b'E6F1081FEA4C402CC192B65DE367EC3E'), b'212CF9')
-
-    def test_get_key_check_value_4(self):
-        self.assertEqual(get_key_check_value(b'E6F1081FEA4C402CC192B65DE367EC3E', 4), b'212C')
-
-    def test_get_key_check_value_6(self):
-        self.assertEqual(get_key_check_value(b'E6F1081FEA4C402CC192B65DE367EC3E', 6), b'212CF9')
-
-    def test_get_key_check_value_16(self):
-        self.assertEqual(get_key_check_value(b'E6F1081FEA4C402CC192B65DE367EC3E', 16), b'212CF9158251CDD3')
+from pythales.hsm import HSM, Message, CA, CY, DC
 
 
 class TestMessageClass(unittest.TestCase):
@@ -210,12 +196,6 @@ class TestHSM(unittest.TestCase):
     def test_decrypt_pinblock(self):
         self.assertEqual(self.hsm._get_clear_key(b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF'), b'6\x1e\xddt\xa1\xb4\xab\xc16\x1e\xddt\xa1\xb4\xab\xc1')
 
-
-    """
-    hsm._get_visa_cvv()
-    """
-    def test_get_visa_cvv(self):
-        self.assertEqual(self.hsm._get_visa_cvv(b'4433678298261175', b'0916', b'101', b'4C37C8319D76ADAB58D9431543C2165B'), '478')
 
     """
     hsm.translate_pinblock()

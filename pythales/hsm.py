@@ -9,17 +9,7 @@ from tracetools.tracetools import trace
 from collections import OrderedDict
 from Crypto.Cipher import DES, DES3
 from binascii import hexlify, unhexlify
-from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv, get_digits_from_string
-
-
-def get_key_check_value(key, kcv_length=6):
-    """
-    Get DES key check value
-    """
-    cipher = DES3.new(B2raw(key), DES3.MODE_ECB)
-    encrypted = raw2B(cipher.encrypt(B2raw(b'00000000000000000000000000000000')))
-
-    return encrypted[:kcv_length]
+from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cvv, get_digits_from_string, key_CV
 
 
 class DC():
@@ -373,22 +363,6 @@ class HSM:
             raise ValueError('Incorrect PIN length: {}'.format(pin_length))
 
 
-    def _get_visa_cvv(self, account_number, exp_date, service_code, CVK):
-        """
-        """
-        if len(CVK) != 32:
-            raise ValueError('Incorrect key length')
-        
-        tsp = exp_date + service_code + b'000000000'
-        des_cipher = DES.new(B2raw(CVK[:16]))
-        des3_cipher = DES3.new(B2raw(CVK), DES3.MODE_ECB)
-        
-        block1 = xor(raw2B(des_cipher.encrypt(B2raw(account_number))), tsp)
-        block2 = des3_cipher.encrypt(B2raw(block1))
-
-        return get_digits_from_string(raw2str(block2), 3)
-
-
     def verify_cvv(self, request):
         """
         Get response to CY command
@@ -400,7 +374,7 @@ class HSM:
         if CVK[0:1] in [b'U']:
             CVK = CVK[1:]
         
-        cvv = self._get_visa_cvv(request.fields['Primary Account Number'], request.fields['Expiration Date'], request.fields['Service Code'], CVK)
+        cvv = get_visa_cvv(request.fields['Primary Account Number'], request.fields['Expiration Date'], request.fields['Service Code'], CVK)
         if bytes(cvv, 'utf-8') == request.fields['CVV']:
             response.fields['Error Code'] = b'00'
         else:
@@ -476,7 +450,7 @@ class HSM:
         response = Message(data=None, header=self.header)
         response.fields['Response Code'] = b'ND' 
         response.fields['Error Code'] = b'00' 
-        response.fields['LMK Check Value'] = get_key_check_value(raw2B(self.LMK), 16)
+        response.fields['LMK Check Value'] = key_CV(raw2B(self.LMK), 16)
         response.fields['Firmware Version'] = bytes(self.firmware_version, 'utf-8')
         return response
 
