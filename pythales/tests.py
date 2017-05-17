@@ -191,13 +191,6 @@ class TestHSM(unittest.TestCase):
             self.hsm._get_clear_pin(b'DF1267EEDCBA9876', b'881123456789')
 
     """
-    hsm._get_clear_key()
-    """
-    def test_decrypt_pinblock(self):
-        self.assertEqual(self.hsm._get_clear_key(b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF'), b'6\x1e\xddt\xa1\xb4\xab\xc16\x1e\xddt\xa1\xb4\xab\xc1')
-
-
-    """
     hsm.translate_pinblock()
     """
     def test_translate_pinblock_different_pinblock_formats(self):
