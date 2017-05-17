@@ -327,9 +327,9 @@ class HSM:
         Decrypt pin block
         """
         if encrypted_terminal_key[0:1] in [b'U']:
-            clear_terminal_key = self.cipher.decrypt(B2raw(encrypted_key[1:]))
+            clear_terminal_key = self.cipher.decrypt(B2raw(encrypted_terminal_key[1:]))
         else:
-            clear_terminal_key = self.cipher.decrypt(B2raw(encrypted_key))
+            clear_terminal_key = self.cipher.decrypt(B2raw(encrypted_terminal_key))
 
         cipher = DES3.new(clear_terminal_key, DES3.MODE_ECB)
         decrypted_pinblock = cipher.decrypt(B2raw(encrypted_pinblock))
