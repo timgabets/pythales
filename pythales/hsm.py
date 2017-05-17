@@ -9,7 +9,7 @@ from tracetools.tracetools import trace
 from collections import OrderedDict
 from Crypto.Cipher import DES, DES3
 from binascii import hexlify, unhexlify
-from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv
+from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv, get_digits_from_string
 
 
 def get_key_check_value(key, kcv_length=6):
@@ -386,7 +386,7 @@ class HSM:
         block1 = xor(raw2B(des_cipher.encrypt(B2raw(account_number))), tsp)
         block2 = des3_cipher.encrypt(B2raw(block1))
 
-        return self._get_digits_from_string(raw2str(block2), 3)
+        return get_digits_from_string(raw2str(block2), 3)
 
 
     def verify_cvv(self, request):
@@ -408,50 +408,6 @@ class HSM:
             response.fields['Error Code'] = b'01'
             
         return response
-
-
-    def _get_digits_from_string(self, cyphertext, length=4):
-        """
-        Extract PVV/CVV digits from the cyphertext (HEX-encoded string)
-        """
-        digits = ''
-    
-        """
-        The algorigthm is used for PVV and CVV calculation.
-
-        1. The cyphertext is scanned from left to right. Decimal digits are
-        selected during the scan until the needed number of decimal digits is found. 
-        Each selected digit is placed from left to right according to the order
-        of selection. If needed number of decimal digits is found (four in case of PVV, 
-        three in case of CVV), those digits are the PVV or CVV.
-        """
-        for c in cyphertext:
-            if len(digits) >= length:
-                break
-    
-            try:
-                int(c)
-                digits += c
-            except ValueError:
-                continue
-    
-        """
-        2. If, at the end of the first scan, less than four decimal digits
-        have been selected, a second scan is performed from left to right.
-        During the second scan, all decimal digits are skipped and only nondecimal
-        digits can be processed. Nondecimal digits are converted to decimal
-        digits by subtracting 10. The process proceeds until four digits of
-        PVV are found.
-        """
-        if len(digits) < length:
-            for c in cyphertext:
-                if len(digits) >= length:
-                    break
-    
-                if (int(c, 16) - 10) >= 0:
-                    digits += str(int(c, 16) - 10)
-    
-        return digits
 
 
     def verify_pin(self, request):

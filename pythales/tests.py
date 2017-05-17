@@ -212,21 +212,6 @@ class TestHSM(unittest.TestCase):
 
 
     """
-    hsm._get_digits_from_string()
-    """
-    def test_get_digits_from_string(self):
-        self.assertEqual(self.hsm._get_digits_from_string('59EF34AD722C0556F7F6FBD4A76D38E6', 4), '5934')
-
-    def test_get_pvv_digits_from_mixed_string(self):
-        self.assertEqual(self.hsm._get_digits_from_string('EEFADCFFFBD7ADECAB9FBB', 4), '7944')
-
-    def test_get_digits_from_string_letters_only(self):
-        self.assertEqual(self.hsm._get_digits_from_string('EFADCFFFBDADECABFBB', 4), '4503')
-
-    def test_get_digits_from_string_letters_only_3(self):
-        self.assertEqual(self.hsm._get_digits_from_string('EFADCFFFBDADECABFBB', 3), '450')
-
-    """
     hsm._get_visa_cvv()
     """
     def test_get_visa_cvv(self):
