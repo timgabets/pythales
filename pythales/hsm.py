@@ -9,7 +9,7 @@ from tracetools.tracetools import trace
 from collections import OrderedDict
 from Crypto.Cipher import DES, DES3
 from binascii import hexlify, unhexlify
-from pynblock.tools import raw2str, raw2B, B2raw, xor
+from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv
 
 
 def get_key_check_value(key, kcv_length=6):
@@ -454,25 +454,6 @@ class HSM:
         return digits
 
 
-    def _get_visa_pvv(self, account_number, key_index, pin, PVK):
-        """
-        The algorithm generates a 4-digit PIN verification value (PVV) based on the transformed security parameter (TSP).
-    
-        For VISA PVV algorithms, the leftmost 11 digits of the TSP are the personal account number (PAN), 
-        the leftmost 12th digit is a key table index to select the PVV generation key, and the rightmost 
-        4 digits are the PIN. The key table index should have a value between 1 and 6, inclusive.
-        """
-        tsp = account_number[-12:-1] + key_index + pin
-        if len(PVK) != 32:
-            raise ValueError('Incorrect key length')
-
-        left_key_cypher = DES3.new(PVK[:16], DES3.MODE_ECB)
-        right_key_cypher = DES3.new(PVK[16:], DES3.MODE_ECB)
-
-        encrypted_tsp = left_key_cypher.encrypt(right_key_cypher.decrypt((left_key_cypher.encrypt(B2raw(tsp)))))
-        return bytes(self._get_digits_from_string(raw2str(encrypted_tsp)), 'utf-8')
-
-
     def verify_pin(self, request):
         """
         Get response to DC command
@@ -483,7 +464,7 @@ class HSM:
 
         try:
             pin = self._get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
-            pvv = self._get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
+            pvv = get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
             if pvv == request.fields['PVV']:
                 response.fields['Error Code'] = b'00'
             else:
