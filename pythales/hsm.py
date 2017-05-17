@@ -322,21 +322,15 @@ class HSM:
         print('Exit')
 
 
-    def _get_clear_key(self, encrypted_key):
-        """
-        Decrypt the key, encrypted under LMK
-        """
-        if encrypted_key[0:1] in [b'U']:
-            return self.cipher.decrypt(B2raw(encrypted_key[1:]))
-        else:
-            return self.cipher.decrypt(B2raw(encrypted_key))
-
-
     def _decrypt_pinblock(self, encrypted_pinblock, encrypted_terminal_key):
         """
         Decrypt pin block
         """
-        clear_terminal_key = self._get_clear_key(encrypted_terminal_key)
+        if encrypted_terminal_key[0:1] in [b'U']:
+            clear_terminal_key = self.cipher.decrypt(B2raw(encrypted_key[1:]))
+        else:
+            clear_terminal_key = self.cipher.decrypt(B2raw(encrypted_key))
+
         cipher = DES3.new(clear_terminal_key, DES3.MODE_ECB)
         decrypted_pinblock = cipher.decrypt(B2raw(encrypted_pinblock))
         return raw2B(decrypted_pinblock)
