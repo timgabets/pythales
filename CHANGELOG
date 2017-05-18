@@ -1,5 +1,6 @@
 
 May 2017
+	0.44 get_clear_pin() moved to pynblock library
 	0.43 get_visa_cvv(), get_visa_pvv(), get_digits_from_string(), key_CV() moved to pynblock library
 	0.42 binary/string data manipulation tools moved to pynblock library
 	0.41 debug_trace() - showing PVV/CVV mismatched values
