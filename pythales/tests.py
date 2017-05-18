@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import HSM, Message, CA, CY, DC, HC
+from pythales.hsm import HSM, Message, BU, CA, CY, DC, HC
 
 
 class TestMessageClass(unittest.TestCase):
@@ -183,6 +183,28 @@ class TestHC(unittest.TestCase):
 
     def test_current_key_parsed(self):
         self.assertEqual(self.hc.fields['Current Key'], b'U1234567890ABCDEF1234567890ABCDEF')
+
+class TestBU(unittest.TestCase):
+    """
+    16:53:16.560494 << 44 bytes received from 192.168.56.101:42364: 
+    00 2a 53 53 53 53 42 55 30 32 31 55 41 39 37 38         .*SSSSBU021UA978
+    33 31 38 36 32 45 33 31 43 43 43 33 36 45 38 35         31862E31CCC36E85
+    34 46 45 31 38 34 45 45 36 34 35 33                     4FE184EE6453
+    """
+    def setUp(self):
+        data = b'021UA97831862E31CCC36E854FE184EE6453'
+        self.bu = BU(data)
+        self.hsm = HSM(header='SSSS')
+
+    def test_key_type_code_parsed(self):
+        self.assertEqual(self.bu.fields['Key Type Code'], b'02')
+
+    def test_key_length_flag_parsed(self):
+        self.assertEqual(self.bu.fields['Key Length Flag'], b'1')
+
+    def test_key_parsed(self):
+        self.assertEqual(self.bu.fields['Key'], b'UA97831862E31CCC36E854FE184EE6453')
+
 
 
 class TestHSM(unittest.TestCase):

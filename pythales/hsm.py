@@ -13,6 +13,28 @@ from binascii import hexlify, unhexlify
 from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cvv, get_digits_from_string, key_CV, get_clear_pin
 
 
+class BU():
+    def __init__(self, data):
+        self.data = data
+        self.fields = OrderedDict()
+
+        # Key type code 
+        field_size = 2
+        self.fields['Key Type Code'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Key length flag
+        field_size = 1
+        self.fields['Key Length Flag'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Key
+        if self.data[0:1] in [b'U']:
+            field_size = 33
+            self.fields['Key'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+
+
 class DC():
     def __init__(self, data):
         self.data = data
@@ -195,7 +217,9 @@ class Message:
 
             self.command_code = self.data[:2]
             
-            if self.command_code == b'DC':
+            if self.command_code == b'BU':
+                self.fields = BU(self.data[2:]).fields
+            elif self.command_code == b'DC':
                 self.fields = DC(self.data[2:]).fields
             elif self.command_code == b'CA':
                 self.fields = CA(self.data[2:]).fields
@@ -490,11 +514,29 @@ class HSM:
         return response
 
 
+    def get_key_check_value(self, request):
+        """
+        Get response to BU command
+        TODO: return different check values (length of 6 or length of 16)
+        """
+        response = Message(data=None, header=self.header)
+        response.fields['Response Code'] = b'BV' 
+        response.fields['Error Code'] = b'00'
+        
+        if request.fields['Key'][0:1] in [b'U']:
+            key = request.fields['Key'][1:]
+
+        response.fields['Key Check Value'] = key_CV(key, 6)
+        return response
+
+
     def get_response(self, request):
         """
         """
         rqst_command_code = request.get_command_code()
-        if rqst_command_code == b'NC':
+        if rqst_command_code == b'BU':
+            return self.get_key_check_value(request)
+        elif rqst_command_code == b'NC':
             return self.get_diagnostics_data()
         elif rqst_command_code == b'DC':
             return self.verify_pin(request)
