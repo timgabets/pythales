@@ -526,7 +526,7 @@ class HSM:
         if request.fields['Key'][0:1] in [b'U']:
             key = request.fields['Key'][1:]
 
-        response.fields['Key Check Value'] = key_CV(key, 6)
+        response.fields['Key Check Value'] = key_CV(key, 16)
         return response
 
 
