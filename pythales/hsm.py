@@ -3,7 +3,8 @@
 import getopt
 import sys
 import socket
-import struct 
+import struct
+import os 
 
 from tracetools.tracetools import trace
 from collections import OrderedDict
@@ -139,6 +140,38 @@ class CY():
         self.data = self.data[field_size:]
 
 
+class HC():
+    """
+    Generate a TMK, TPK or PVK
+    """
+    def __init__(self, data):
+        self.data = data
+        self.fields = OrderedDict()
+
+        # Current Key
+        if self.data[0:1] in [b'U']:
+            field_size = 33
+        else:
+            field_size = 16
+
+        self.fields['Current Key'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # ; delimiter
+        field_size = 1
+        self.data = self.data[field_size:]
+
+        # Key Scheme (TMK)
+        field_size = 1
+        self.fields['Key Scheme (TMK)'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Key Scheme (LMK)
+        field_size = 1
+        self.fields['Key Scheme (LMK)'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+
 class Message:
     def __init__(self, data=None, header=None):
         if data:
@@ -168,6 +201,8 @@ class Message:
                 self.fields = CA(self.data[2:]).fields
             elif self.command_code == b'CY':
                 self.fields = CY(self.data[2:]).fields
+            elif self.command_code == b'HC':
+                self.fields = HC(self.data[2:]).fields
             else:
                 self.fields = None
 
@@ -357,6 +392,34 @@ class HSM:
         return response
 
 
+    def generate_key(self, request):
+        """
+        Get response to HC command
+        TODO: generating keys for different schemes
+        """
+        response =  Message(data=None, header=self.header)
+        response.fields['Response Code'] = b'HD'
+        response.fields['Error Code'] = b'00'
+
+        new_clear_key = bytes(os.urandom(16))
+        #new_clear_key = b'J\xbf0@`\xab\xc1\x81\xfd4\xd1\x8e\xf9\xf6\x80\x0b'
+        self._debug_trace('Generated key: {}'.format(raw2str(new_clear_key)))
+
+        if request.fields['Current Key'][0:1] in [b'U']:
+            current_key = request.fields['Current Key'][1:]
+        else:
+            current_key = request.fields['Current Key']
+        curr_key_cipher = DES3.new(B2raw(current_key), DES3.MODE_ECB)
+
+        new_key_under_current_key = curr_key_cipher.encrypt(new_clear_key)
+        new_key_under_lmk = self.cipher.encrypt(new_clear_key)
+
+        response.fields['New key under the current key'] = b'U' + raw2B(new_key_under_current_key)
+        response.fields['New key under LMK'] = b'U' + raw2B(new_key_under_lmk)
+
+        return response
+
+
     def verify_pin(self, request):
         """
         Get response to DC command
@@ -384,7 +447,6 @@ class HSM:
     def translate_pinblock(self, request):
         """
         Get response to CA command (Translate PIN from TPK to ZPK)
-        TODO: return Message object
         """
         response_code = b'CB00'
         pinblock_format = request.fields['Destination PIN block format']
@@ -440,6 +502,8 @@ class HSM:
             return self.translate_pinblock(request)
         elif rqst_command_code == b'CY':
             return self.verify_cvv(request)
+        elif rqst_command_code == b'HC':
+            return self.generate_key(request)
         else:
             response = Message(data=None, header=self.header)
             response.fields['Response Code'] = b'ZZ'

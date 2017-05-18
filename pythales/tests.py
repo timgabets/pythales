@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import HSM, Message, CA, CY, DC
+from pythales.hsm import HSM, Message, CA, CY, DC, HC
 
 
 class TestMessageClass(unittest.TestCase):
@@ -166,6 +166,23 @@ class TestCY(unittest.TestCase):
 
     def test_service_code_parsed(self):
         self.assertEqual(self.cy.fields['Service Code'], b'201')
+
+
+class TestHC(unittest.TestCase):
+    """
+    16:48:04.000521 << 45 bytes received from 192.168.56.101:42292: 
+    00 2b 53 53 53 53 48 43 55 31 32 33 34 35 36 37         .+SSSSHCU1234567
+    38 39 30 41 42 43 44 45 46 31 32 33 34 35 36 37         890ABCDEF1234567
+    38 39 30 41 42 43 44 45 46 3b 58 55 31                  890ABCDEF;XU1
+
+    """
+    def setUp(self):
+        data = b'U1234567890ABCDEF1234567890ABCDEF;XU1'
+        self.hc = HC(data)
+        self.hsm = HSM(header='SSSS')
+
+    def test_current_key_parsed(self):
+        self.assertEqual(self.hc.fields['Current Key'], b'U1234567890ABCDEF1234567890ABCDEF')
 
 
 class TestHSM(unittest.TestCase):

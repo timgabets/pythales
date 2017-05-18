@@ -6,5 +6,6 @@ A primitive implementation of Thales HSM (hardware security module) simulator. O
 * DC - Verify PIN
 * CA - Translate PIN from TPK to ZPK 
 * CY - Verify CVV/CSC
+* HC - Generate a TMK, TPK or PVK
 
 This HSM simulator was written according to Thales payShield 9000 Host Command Reference manual.
