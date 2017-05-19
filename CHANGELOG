@@ -1,5 +1,7 @@
 
 May 2017
+	0.50 Fixed modify_key_parity() bug in generate_key()
+	0.49 Default LMK changed to the parity checked one
 	0.48 Check key parity
 	0.47 Fixed bug in HC command: decrypt LMK-encrypted key first
 	0.46 BU command support (Generate Key check value)

@@ -410,7 +410,7 @@ class HSM:
         if CVK[0:1] in [b'U']:
             CVK = CVK[1:]
         
-        if not check_key_parity(CVK):
+        if not check_key_parity(self.cipher.decrypt(B2raw(CVK))):
             self._debug_trace('CVK parity error')
             response.fields['Error Code'] = b'10'
             return response
@@ -434,8 +434,7 @@ class HSM:
         response.fields['Response Code'] = b'HD'
         response.fields['Error Code'] = b'00'
 
-        new_clear_key = bytes(os.urandom(16))
-        parity_validated_key = modify_key_parity(new_clear_key)
+        new_clear_key = modify_key_parity(bytes(os.urandom(16)))
         self._debug_trace('Generated key: {}'.format(raw2str(new_clear_key)))
 
         if request.fields['Current Key'][0:1] in [b'U']:
@@ -459,15 +458,13 @@ class HSM:
         """
         Get response to DC command
         """
-        decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
-        self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))  
         response =  Message(data=None, header=self.header)
         response.fields['Response Code'] = b'DD'
 
         TPK = request.fields['TPK']
         if TPK[0:1] in [b'U']:
             TPK = TPK[1:]
-        if not check_key_parity(TPK):
+        if not check_key_parity(self.cipher.decrypt(B2raw(TPK))):
             self._debug_trace('TPK parity error')
             response.fields['Error Code'] = b'10'
             return response
@@ -475,11 +472,14 @@ class HSM:
         PVK = request.fields['PVK Pair']
         if PVK[0:1] in [b'U']:
             PVK = PVK[1:]
-        if not check_key_parity(PVK):
+        if not check_key_parity(self.cipher.decrypt(B2raw(PVK))):
             self._debug_trace('PVK parity error')
             response.fields['Error Code'] = b'11'
             return response
 
+        decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
+        self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))  
+        
         try:
             pin = get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
             pvv = get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
@@ -514,7 +514,7 @@ class HSM:
         TPK = request.fields['TPK']
         if TPK[0:1] in [b'U']:
             TPK = TPK[1:]
-        if not check_key_parity(TPK):
+        if not check_key_parity(self.cipher.decrypt(B2raw(TPK))):
             self._debug_trace('Source TPK parity error')
             response.fields['Error Code'] = b'10'
             return response
@@ -524,7 +524,7 @@ class HSM:
             destination_key = request.fields['Destination Key'][1:]
         else:
             destination_key = request.fields['Destination Key']
-        if not check_key_parity(destination_key):
+        if not check_key_parity(self.cipher.decrypt(B2raw(destination_key))):
             self._debug_trace('Destination ZPK parity error')
             response.fields['Error Code'] = b'11'
             return response
