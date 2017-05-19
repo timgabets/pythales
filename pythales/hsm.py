@@ -501,7 +501,8 @@ class HSM:
         """
         Get response to CA command (Translate PIN from TPK to ZPK)
         """
-        response_code = b'CB00'
+        response = Message(data=None, header=self.header)
+        response.fields['Response Code'] = b'CB'
         pinblock_format = request.fields['Destination PIN block format']
 
         if request.fields['Destination PIN block format'] != request.fields['Source PIN block format']:
@@ -532,12 +533,9 @@ class HSM:
         decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
         pin_length = decrypted_pinblock[0:2]
 
-
         cipher = DES3.new(B2raw(destination_key), DES3.MODE_ECB)
         translated_pin_block = cipher.encrypt(B2raw(decrypted_pinblock))
 
-        response = Message(data=None, header=self.header)
-        response.fields['Response Code'] = b'CB'
         response.fields['Error Code'] = b'00'
         response.fields['PIN Length'] = decrypted_pinblock[0:2]
         response.fields['Destination PIN Block'] = raw2B(translated_pin_block)
