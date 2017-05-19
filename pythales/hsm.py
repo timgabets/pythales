@@ -478,7 +478,7 @@ class HSM:
             return response
 
         decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
-        self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))  
+        self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))
         
         try:
             pin = get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
@@ -531,6 +531,8 @@ class HSM:
             return response
 
         decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
+        self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))
+        
         pin_length = decrypted_pinblock[0:2]
 
         cipher = DES3.new(B2raw(destination_key), DES3.MODE_ECB)
