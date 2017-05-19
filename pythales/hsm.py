@@ -433,7 +433,9 @@ class HSM:
             current_key = request.fields['Current Key'][1:]
         else:
             current_key = request.fields['Current Key']
-        curr_key_cipher = DES3.new(B2raw(current_key), DES3.MODE_ECB)
+
+        clear_current_key = self.cipher.decrypt(B2raw(current_key))
+        curr_key_cipher = DES3.new(clear_current_key, DES3.MODE_ECB)
 
         new_key_under_current_key = curr_key_cipher.encrypt(new_clear_key)
         new_key_under_lmk = self.cipher.encrypt(new_clear_key)

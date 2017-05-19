@@ -1,5 +1,6 @@
 
 May 2017
+	0.47 Fixed bug in HC command: decrypt LMK-encrypted key first
 	0.46 BU command support (Generate Key check value)
 	0.45 HC command support (Generate a TMK, TPK or PVK)
 	0.44 get_clear_pin() moved to pynblock library
