@@ -10,12 +10,12 @@ from tracetools.tracetools import trace
 from collections import OrderedDict
 from Crypto.Cipher import DES, DES3
 from binascii import hexlify, unhexlify
-from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cvv, get_digits_from_string, key_CV, get_clear_pin
-
+from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cvv, get_digits_from_string, key_CV, get_clear_pin, check_key_parity, modify_key_parity
 
 class BU():
     def __init__(self, data):
         self.data = data
+        self.description = 'Generate a Key check value'
         self.fields = OrderedDict()
 
         # Key type code 
@@ -38,6 +38,7 @@ class BU():
 class DC():
     def __init__(self, data):
         self.data = data
+        self.description = 'Verify PIN'
         self.fields = OrderedDict()
 
         # TPK
@@ -85,6 +86,7 @@ class DC():
 class CA():
     def __init__(self, data):
         self.data = data
+        self.description = 'Translate PIN from TPK to ZPK'
         self.fields = OrderedDict()
 
         # TPK
@@ -128,6 +130,7 @@ class CA():
 class CY():
     def __init__(self, data):
         self.data = data
+        self.description = 'Verify CVV/CSC'
         self.fields = OrderedDict()
 
         # CVK
@@ -168,6 +171,7 @@ class HC():
     """
     def __init__(self, data):
         self.data = data
+        self.description = 'Generate a TMK, TPK or PVK'
         self.fields = OrderedDict()
 
         # Current Key
@@ -304,7 +308,7 @@ class HSM:
         if key:
             self.LMK = bytes.fromhex(key)
         else:
-            self.LMK = bytes.fromhex('deadbeef deadbeef deadbeef deadbeef')
+            self.LMK = bytes.fromhex('deafbeedeafbeedeafbeedeafbeedeaf')
         
         self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
         self.debug = debug
@@ -406,6 +410,11 @@ class HSM:
         if CVK[0:1] in [b'U']:
             CVK = CVK[1:]
         
+        if not check_key_parity(CVK):
+            self._debug_trace('CVK parity error')
+            response.fields['Error Code'] = b'10'
+            return response
+
         cvv = get_visa_cvv(request.fields['Primary Account Number'], request.fields['Expiration Date'], request.fields['Service Code'], CVK)
         if bytes(cvv, 'utf-8') == request.fields['CVV']:
             response.fields['Error Code'] = b'00'
@@ -426,7 +435,7 @@ class HSM:
         response.fields['Error Code'] = b'00'
 
         new_clear_key = bytes(os.urandom(16))
-        #new_clear_key = b'J\xbf0@`\xab\xc1\x81\xfd4\xd1\x8e\xf9\xf6\x80\x0b'
+        parity_validated_key = modify_key_parity(new_clear_key)
         self._debug_trace('Generated key: {}'.format(raw2str(new_clear_key)))
 
         if request.fields['Current Key'][0:1] in [b'U']:
@@ -451,8 +460,25 @@ class HSM:
         Get response to DC command
         """
         decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
+        self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))  
         response =  Message(data=None, header=self.header)
         response.fields['Response Code'] = b'DD'
+
+        TPK = request.fields['TPK']
+        if TPK[0:1] in [b'U']:
+            TPK = TPK[1:]
+        if not check_key_parity(TPK):
+            self._debug_trace('TPK parity error')
+            response.fields['Error Code'] = b'10'
+            return response
+
+        PVK = request.fields['PVK Pair']
+        if PVK[0:1] in [b'U']:
+            PVK = PVK[1:]
+        if not check_key_parity(PVK):
+            self._debug_trace('PVK parity error')
+            response.fields['Error Code'] = b'11'
+            return response
 
         try:
             pin = get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
@@ -465,7 +491,8 @@ class HSM:
             
             return response
 
-        except ValueError:
+        except ValueError as err:
+            self._debug_trace(err)
             response.fields['Error Code'] = b'01'
             return response
 
@@ -483,13 +510,28 @@ class HSM:
         if request.fields['Source PIN block format'] != b'01':
             raise ValueError('Unsupported PIN block format: {}'.format(request.fields['Source PIN block format'].decode('utf-8')))
 
-        decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
-        pin_length = decrypted_pinblock[0:2]
+        # Source key parity check
+        TPK = request.fields['TPK']
+        if TPK[0:1] in [b'U']:
+            TPK = TPK[1:]
+        if not check_key_parity(TPK):
+            self._debug_trace('Source TPK parity error')
+            response.fields['Error Code'] = b'10'
+            return response
 
+        # Destination key parity check
         if request.fields['Destination Key'][0:1] in [b'U']:
             destination_key = request.fields['Destination Key'][1:]
         else:
             destination_key = request.fields['Destination Key']
+        if not check_key_parity(destination_key):
+            self._debug_trace('Destination ZPK parity error')
+            response.fields['Error Code'] = b'11'
+            return response
+
+        decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
+        pin_length = decrypted_pinblock[0:2]
+
 
         cipher = DES3.new(B2raw(destination_key), DES3.MODE_ECB)
         translated_pin_block = cipher.encrypt(B2raw(decrypted_pinblock))

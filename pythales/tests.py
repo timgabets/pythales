@@ -99,6 +99,9 @@ class TestDC(unittest.TestCase):
     def test_pvv_parsed(self):
         self.assertEqual(self.dc.fields['PVV'], b'8723')
 
+    def test_DC_desciprion(self):
+        self.assertEqual(self.dc.description, 'Verify PIN')
+
 
 class TestCA(unittest.TestCase):
     """
