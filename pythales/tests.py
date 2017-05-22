@@ -266,7 +266,7 @@ class TestBU(unittest.TestCase):
 
 class TestHSM(unittest.TestCase):
     def setUp(self):
-        self.hsm = HSM(header='SSSS')
+        self.hsm = HSM(header='SSSS', skip_parity=True)
 
     def test_decrypt_pinblock(self):
         self.assertEqual(self.hsm._decrypt_pinblock(b'2B687AEFC34B1A89', b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF'), b'2AD242FBD61291DB')
@@ -318,13 +318,21 @@ class TestHSM(unittest.TestCase):
         [PVKI                 ]: [1]
         [PVV                  ]: [3843]
         """
-        #data = b'U827E67B59A1D6B8F827E67B59A1D6B8F7336D50C47128D710DF450BCB2C6461BC32F104A6846BD870140700000001013843'
-        #request = EC(data)
-        #reponse = self.hsm.verify_pin(request)
-        #self.assertEqual(response.fields['Response Code'], b'ED')
+        data = b'U827E67B59A1D6B8F827E67B59A1D6B8F7336D50C47128D710DF450BCB2C6461BC32F104A6846BD870140700000001013843'
+        request = EC(data)
+        response = self.hsm.verify_pin(request)
+        self.assertEqual(response.get('Response Code'), b'ED')
+        self.assertEqual(response.get('Error Code'), b'00')
 
 
-
+    def test_verify_pin_DC(self):
+        """
+        """
+        data = b'U827E67B59A1D6B8F827E67B59A1D6B8F7336D50C47128D710DF450BCB2C6461BC32F104A6846BD870140700000001013843'
+        request = DC(data)
+        response = self.hsm.verify_pin(request)
+        self.assertEqual(response.get('Response Code'), b'DD')
+        self.assertEqual(response.get('Error Code'), b'00')
 
 if __name__ == '__main__':
     unittest.main()

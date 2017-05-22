@@ -14,6 +14,7 @@ from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cv
 
 class DummyMessage():
     def __init__(self, data):
+        self.command_code = None
         self.fields = OrderedDict()
 
     def get(self, field):
@@ -30,9 +31,16 @@ class DummyMessage():
         self.fields[field] = value
 
 
+    def get_command_code(self):
+        """
+        """
+        return self.command_code
+
+
 class BU(DummyMessage):
     def __init__(self, data):
         self.data = data
+        self.command_code = b'BU'
         self.description = 'Generate a Key check value'
         self.fields = OrderedDict()
 
@@ -56,6 +64,7 @@ class BU(DummyMessage):
 class DC(DummyMessage):
     def __init__(self, data):
         self.data = data
+        self.command_code = b'DC'
         self.description = 'Verify PIN'
         self.fields = OrderedDict()
 
@@ -104,6 +113,7 @@ class DC(DummyMessage):
 class CA(DummyMessage):
     def __init__(self, data):
         self.data = data
+        self.command_code = b'CA'
         self.description = 'Translate PIN from TPK to ZPK'
         self.fields = OrderedDict()
 
@@ -148,6 +158,7 @@ class CA(DummyMessage):
 class CY(DummyMessage):
     def __init__(self, data):
         self.data = data
+        self.command_code = b'CY'
         self.description = 'Verify CVV/CSC'
         self.fields = OrderedDict()
 
@@ -186,6 +197,7 @@ class CY(DummyMessage):
 class EC(DummyMessage):
     def __init__(self, data):
         self.data = data
+        self.command_code = b'EC'
         self.description = 'Verify an Interchange PIN using ABA PVV method'
         self.fields = OrderedDict()
 
@@ -241,6 +253,7 @@ class HC(DummyMessage):
     """
     def __init__(self, data):
         self.data = data
+        self.command_code = b'HC'
         self.description = 'Generate a TMK, TPK or PVK'
         self.fields = OrderedDict()
 
@@ -312,12 +325,6 @@ class Message(DummyMessage):
             """
             self.header = header
             self.fields = OrderedDict()
-
-    
-    def get_command_code(self):
-        """
-        """
-        return self.command_code
 
 
     def set_response_code(self, response_code):
@@ -501,6 +508,7 @@ class HSM:
         if CVK[0:1] in [b'U']:
             CVK = CVK[1:]
         cvv = get_visa_cvv(request.get('Primary Account Number'), request.get('Expiration Date'), request.get('Service Code'), CVK)
+        
         if bytes(cvv, 'utf-8') == request.get('CVV'):
             response.set_error_code('00')
         else:
@@ -592,7 +600,6 @@ class HSM:
                 self._debug_trace('PVV mismatch: {} != {}'.format(pvv.decode('utf-8'), request.get('PVV').decode('utf-8')))
                 response.set_error_code('01')
 
-            
             return response
 
         except ValueError as err:
