@@ -519,10 +519,9 @@ class HSM:
         new_clear_key = modify_key_parity(bytes(os.urandom(16)))
         self._debug_trace('Generated key: {}'.format(raw2str(new_clear_key)))
 
-        if request.get('Current Key')[0:1] in [b'U']:
-            current_key = request.get('Current Key')[1:]
-        else:
-            current_key = request.get('Current Key')
+        current_key = request.get('Current Key')
+        if current_key[0:1] in [b'U']:
+            current_key = current_key[1:]
 
         clear_current_key = self.cipher.decrypt(B2raw(current_key))
         curr_key_cipher = DES3.new(clear_current_key, DES3.MODE_ECB)
@@ -630,10 +629,9 @@ class HSM:
         
         pin_length = decrypted_pinblock[0:2]
 
-        if request.get('Destination Key')[0:1] in [b'U']:
-            destination_key = request.get('Destination Key')[1:]
-        else:
-            destination_key = request.get('Destination Key')
+        destination_key = request.get('Destination Key')
+        if destination_key[0:1] in [b'U']:
+            destination_key = destination_key[1:]
         cipher = DES3.new(B2raw(destination_key), DES3.MODE_ECB)
         translated_pin_block = cipher.encrypt(B2raw(decrypted_pinblock))
 
@@ -666,9 +664,9 @@ class HSM:
         response.set_response_code('BV')
         response.set_error_code('00')
         
-        if request.get('Key')[0:1] in [b'U']:
-            key = request.get('Key')[1:]
-
+        key = request.get('Key')
+        if key[0:1] in [b'U']:
+            key = key[1:]
         response.set('Key Check Value', key_CV(key, 16))
         return response
 
