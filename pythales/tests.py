@@ -73,7 +73,6 @@ class TestDC(unittest.TestCase):
     def setUp(self):
         data = b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF1234567890ABCDEF1234567890ABCDEF2B687AEFC34B1A890100112345678918723'
         self.dc = DC(data)
-        self.hsm = HSM(header='SSSS')
         
     def test_tpk_parsed(self):
         self.assertEqual(self.dc.fields['TPK'], b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF')
@@ -114,7 +113,6 @@ class TestCA(unittest.TestCase):
     def setUp(self):
         data = b'UED4A35D52C9063A1ED4A35D52C9063A1UD39D39EB7C932CF367C97C5B10B2C195127DF366B86AE2D9A70103552000000012'
         self.ca = CA(data)
-        self.hsm = HSM(header='SSSS')
 
     def test_tpk_parsed(self):
         self.assertEqual(self.ca.fields['TPK'], b'UED4A35D52C9063A1ED4A35D52C9063A1')
@@ -150,7 +148,6 @@ class TestCY(unittest.TestCase):
     def setUp(self):
         data = b'U449DF1679F4A4E0695E99D921A253DCB0008990011234567890;1809201'
         self.cy = CY(data)
-        self.hsm = HSM(header='SSSS')
 
     def test_cvk_parsed(self):
         self.assertEqual(self.cy.fields['CVK'], b'U449DF1679F4A4E0695E99D921A253DCB')
@@ -181,7 +178,6 @@ class TestEC(unittest.TestCase):
     def setUp(self):
         data = b'UAE79D203F9640A93CFBA155E345953F67336D50C47128D710DF450BCB2C6461BC32F104A6846BD870140700000001012345'
         self.ec = EC(data)
-        self.hsm = HSM(header='SSSS')
 
     def test_zpk_parsed(self):
         self.assertEqual(self.ec.fields['ZPK'], b'UAE79D203F9640A93CFBA155E345953F6')
@@ -216,7 +212,6 @@ class TestHC(unittest.TestCase):
     def setUp(self):
         data = b'U1234567890ABCDEF1234567890ABCDEF;XU1'
         self.hc = HC(data)
-        self.hsm = HSM(header='SSSS')
 
     def test_current_key_parsed(self):
         self.assertEqual(self.hc.fields['Current Key'], b'U1234567890ABCDEF1234567890ABCDEF')
@@ -231,7 +226,6 @@ class TestBU(unittest.TestCase):
     def setUp(self):
         data = b'021UA97831862E31CCC36E854FE184EE6453'
         self.bu = BU(data)
-        self.hsm = HSM(header='SSSS')
 
     def test_key_type_code_parsed(self):
         self.assertEqual(self.bu.fields['Key Type Code'], b'02')

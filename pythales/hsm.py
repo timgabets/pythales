@@ -327,12 +327,6 @@ class OutgoingMessage(DummyMessage):
         self.fields['Error Code'] = bytes(error_code, 'utf-8')
 
 
-    def get_data(self):
-        """
-        """
-        return self.data
-
-
     def build(self):
         """
         Build the outgoing message (legacy)
@@ -348,6 +342,9 @@ class OutgoingMessage(DummyMessage):
 
 
 def parse_message(data=None, header=None):
+    """
+    Parse the incoming message, check the header and return tuple (command code, command data)
+    """
     if not data:
         return None
     
@@ -442,12 +439,12 @@ class HSM:
                         
                         if command_code == b'BU':
                             request = BU(command_data)
-                        elif command_code == b'DC':
-                            request = DC(command_data)
                         elif command_code == b'CA':
                             request = CA(command_data)
                         elif command_code == b'CY':
                             request = CY(command_data)
+                        elif command_code == b'DC':
+                            request = DC(command_data)
                         elif command_code == b'EC':
                             request = EC(command_data)
                         elif command_code == b'HC':
