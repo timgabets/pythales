@@ -12,7 +12,20 @@ from Crypto.Cipher import DES, DES3
 from binascii import hexlify, unhexlify
 from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cvv, get_digits_from_string, key_CV, get_clear_pin, check_key_parity, modify_key_parity
 
-class BU():
+class DummyMessage():
+    def __init__(self):
+        self.fields = OrderedDict()
+
+    def get(self, field):
+        """
+        """
+        try:
+            return self.fields[field]
+        except KeyError:
+            return None
+
+
+class BU(DummyMessage):
     def __init__(self, data):
         self.data = data
         self.description = 'Generate a Key check value'
@@ -35,7 +48,7 @@ class BU():
             self.data = self.data[field_size:]
 
 
-class DC():
+class DC(DummyMessage):
     def __init__(self, data):
         self.data = data
         self.description = 'Verify PIN'
@@ -83,7 +96,7 @@ class DC():
         self.data = self.data[field_size:]
 
 
-class CA():
+class CA(DummyMessage):
     def __init__(self, data):
         self.data = data
         self.description = 'Translate PIN from TPK to ZPK'
@@ -127,7 +140,7 @@ class CA():
         self.data = self.data[field_size:]
 
 
-class CY():
+class CY(DummyMessage):
     def __init__(self, data):
         self.data = data
         self.description = 'Verify CVV/CSC'
@@ -165,7 +178,7 @@ class CY():
         self.data = self.data[field_size:]
 
 
-class EC():
+class EC(DummyMessage):
     def __init__(self, data):
         self.data = data
         self.description = 'Verify an Interchange PIN using ABA PVV method'
@@ -217,7 +230,7 @@ class EC():
         self.data = self.data[field_size:] 
 
 
-class HC():
+class HC(DummyMessage):
     """
     Generate a TMK, TPK or PVK
     """
