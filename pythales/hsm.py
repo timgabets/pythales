@@ -556,13 +556,12 @@ class HSM:
         response =  Message(data=None, header=self.header)
         command_code = request.get_command_code()
 
-        if command_code == b'DC':
-            response.fields['Response Code'] = b'DD'
+        if command_code == b'DC':            
+            response.set_response_code('DD')
             key_type = 'TPK'
         elif command_code == b'EC':
-            response.fields['Response Code'] = b'ED'
+            response.set_response_code('ED')
             key_type = 'ZPK'
-
 
         if not self.check_key_parity(request.fields[key_type]):
             self._debug_trace(key_type + ' parity error')
@@ -605,7 +604,7 @@ class HSM:
         Get response to CA command (Translate PIN from TPK to ZPK)
         """
         response = Message(data=None, header=self.header)
-        response.fields['Response Code'] = b'CB'
+        response.set_response_code('CB')
         pinblock_format = request.fields['Destination PIN block format']
 
         if request.fields['Destination PIN block format'] != request.fields['Source PIN block format']:
