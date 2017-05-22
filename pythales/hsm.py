@@ -7,7 +7,7 @@ from tracetools.tracetools import trace
 from collections import OrderedDict
 from Crypto.Cipher import DES, DES3
 from binascii import hexlify, unhexlify
-from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cvv, get_digits_from_string, key_CV, get_clear_pin, check_key_parity, modify_key_parity
+from pynblock.tools import str2bytes, raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cvv, get_digits_from_string, key_CV, get_clear_pin, check_key_parity, modify_key_parity
 
 class DummyMessage():
     def __init__(self, data):
@@ -315,13 +315,13 @@ class OutgoingMessage(DummyMessage):
         """
         """
         self.command_code = response_code
-        self.fields['Response Code'] = bytes(response_code, 'utf-8')
+        self.fields['Response Code'] = str2bytes(response_code)
 
 
     def set_error_code(self, error_code):
         """
         """
-        self.fields['Error Code'] = bytes(error_code, 'utf-8')
+        self.fields['Error Code'] = str2bytes(error_code)
 
 
     def build(self):
@@ -373,14 +373,14 @@ class HSM:
             self.port = 1500
 
         if header:
-            self.header = bytes(header, 'utf-8')
+            self.header = str2bytes(header)
         else:
             self.header = b''
 
         if key:
-            self.LMK = bytes.fromhex(key)
+            self.LMK = unhexlify(key)
         else:
-            self.LMK = bytes.fromhex('deafbeedeafbeedeafbeedeafbeedeaf')
+            self.LMK = unhexlify('deafbeedeafbeedeafbeedeafbeedeaf')
         
         self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
         self.debug = debug
@@ -507,7 +507,7 @@ class HSM:
             CVK = CVK[1:]
         cvv = get_visa_cvv(request.get('Primary Account Number'), request.get('Expiration Date'), request.get('Service Code'), CVK)
         
-        if bytes(cvv, 'utf-8') == request.get('CVV'):
+        if str2bytes(cvv) == request.get('CVV'):
             response.set_error_code('00')
         else:
             self._debug_trace('CVV mismatch: {} != {}'.format(cvv, request.get('CVV').decode('utf-8')))
@@ -659,7 +659,7 @@ class HSM:
         response.set_response_code('ND')
         response.set_error_code('00')
         response.set('LMK Check Value', key_CV(raw2B(self.LMK), 16))
-        response.set('Firmware Version', bytes(self.firmware_version, 'utf-8'))
+        response.set('Firmware Version', str2bytes(self.firmware_version))
         return response
 
 
