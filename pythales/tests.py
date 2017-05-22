@@ -2,52 +2,32 @@
 
 import unittest
 
-from pythales.hsm import HSM, Message, BU, CA, CY, DC, EC, HC
+from pythales.hsm import HSM, OutgoingMessage, BU, CA, CY, DC, EC, HC, parse_message
 
-
-class TestMessageClass(unittest.TestCase):
+class TestParseMessage(unittest.TestCase):
     """
     """
-    def test_get_length(self):
-        m = Message(b'\x00\x06SSSS00')
-        self.assertEqual(m.get_length(), 6)
-
-
     def test_get_length_incorrect(self):
         with self.assertRaisesRegex(ValueError, 'Expected message of length 6 but actual received message length is 2'):
-            m = Message(b'\x00\x0600')
-            self.assertEqual(m.get_length(), 6)
-
+            parse_message(b'\x00\x0600')
 
     def test_invalid_message_header(self):
         data = b'\x00\x06SSSS00'
         header = b'XDXD'
         with self.assertRaisesRegex(ValueError, 'Invalid header'):
-            m = Message(data, header)
+            parse_message(data, header)
+
+    def test_parse_message_command_code_and_data(self):
+        parsed = parse_message(b'\x00\x07HDRDCXX', b'HDR')
+        self.assertEqual(parsed[0], b'DC')    
+        self.assertEqual(parsed[1], b'XX')    
 
 
-    def test_valid_message_header(self):
-        data = b'\x00\x07IDDQD77'
-        header = b'IDDQD'
-        self.assertTrue(Message(data, header))
-
-
-    def test_get_data(self):
-        data = b'\x00\x07HDRDATA'
-        header = b'HDR'
-        m = Message(data, header)
-        self.assertEqual(m.get_data(), b'DATA')
-
-
-    def test_get_command_code(self):
-        data = b'\x00\x07HDRDCXX'
-        header = b'HDR'
-        m = Message(data, header)
-        self.assertEqual(m.get_command_code(), b'DC')    
-
-
+class TestOutgoingMessageClass(unittest.TestCase):
+    """
+    """
     def test_outgoing_message(self):
-        m = Message(data=None, header=b'XXXX')
+        m = OutgoingMessage(header=b'XXXX')
         m.fields['Command Code'] = b'NG'
         m.fields['Response Code'] = b'00'
         m.fields['Data'] = b'7444321'
@@ -55,7 +35,7 @@ class TestMessageClass(unittest.TestCase):
 
 
     def test_outgoing_message_no_header(self):
-        m = Message(data=None, header=None)
+        m = OutgoingMessage(header=None)
         m.fields['Command Code'] = b'NG'
         m.fields['Response Code'] = b'00'
         m.fields['Data'] = b'7444321'
@@ -64,7 +44,7 @@ class TestMessageClass(unittest.TestCase):
 
 class TestMessageGet(unittest.TestCase):
     def setUp(self):
-        self.m = Message(data=None, header=None)
+        self.m = OutgoingMessage(header=None)
         self.m.fields['Command Code'] = b'NG'
         self.m.fields['Response Code'] = b'00'
         self.m.fields['Data'] = b'7444321'
@@ -333,6 +313,7 @@ class TestHSM(unittest.TestCase):
         response = self.hsm.verify_pin(request)
         self.assertEqual(response.get('Response Code'), b'DD')
         self.assertEqual(response.get('Error Code'), b'00')
+
 
 if __name__ == '__main__':
     unittest.main()

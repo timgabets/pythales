@@ -36,6 +36,22 @@ class DummyMessage():
         """
         return self.command_code
 
+    def trace(self):
+        """
+        """
+        if not self.fields:
+            return ''
+
+        width = 0
+        for key, value in self.fields.items():
+            if len(key) > width:
+                width = len(key)
+
+        dump = ''
+        for key, value in self.fields.items():
+            dump = dump + '\t[' + key.ljust(width, ' ') + ']: [' + value.decode('utf-8') + ']\n'
+        return dump
+
 
 class BU(DummyMessage):
     def __init__(self, data):
@@ -281,50 +297,21 @@ class HC(DummyMessage):
         self.data = self.data[field_size:]
 
 
-class Message(DummyMessage):
+class NC(DummyMessage):
+    """
+    Diagnostics data
+    """
+    def __init__(self, data):
+        self.data = data
+        self.command_code = b'NC'
+        self.description = 'Diagnostics data'
+        self.fields = OrderedDict()
+
+
+class OutgoingMessage(DummyMessage):
     def __init__(self, data=None, header=None):
-        if data:
-            """
-            Incoming message
-            """
-            self.length = struct.unpack_from("!H", data[:2])[0]
-            if(self.length != len(data) - 2):
-                raise ValueError('Expected message of length {0} but actual received message length is {1}'.format(self.length, len(data) - 2))
-    
-            if header:
-                for h, d in zip(header, data[2:]):
-                    if h != d:
-                        raise ValueError('Invalid header')
-                self.header = header 
-
-            if header:
-                self.data = data[2 + len(header) : ]
-            else:
-                self.data = data[2:]
-
-            self.command_code = self.data[:2]
-            
-            if self.command_code == b'BU':
-                self.fields = BU(self.data[2:]).fields
-            elif self.command_code == b'DC':
-                self.fields = DC(self.data[2:]).fields
-            elif self.command_code == b'CA':
-                self.fields = CA(self.data[2:]).fields
-            elif self.command_code == b'CY':
-                self.fields = CY(self.data[2:]).fields
-            elif self.command_code == b'EC':
-                self.fields = EC(self.data[2:]).fields
-            elif self.command_code == b'HC':
-                self.fields = HC(self.data[2:]).fields
-            else:
-                self.fields = None
-
-        else:
-            """
-            Outgoing message
-            """
-            self.header = header
-            self.fields = OrderedDict()
+        self.header = header
+        self.fields = OrderedDict()
 
 
     def set_response_code(self, response_code):
@@ -338,12 +325,6 @@ class Message(DummyMessage):
         """
         """
         self.fields['Error Code'] = bytes(error_code, 'utf-8')
-
-
-    def get_length(self):
-        """
-        """
-        return self.length
 
 
     def get_data(self):
@@ -366,21 +347,26 @@ class Message(DummyMessage):
             return struct.pack("!H", len(data)) + data
 
 
-    def trace(self):
-        """
-        """
-        if not self.fields:
-            return ''
+def parse_message(data=None, header=None):
+    if not data:
+        return None
+    
+    length = struct.unpack_from("!H", data[:2])[0]
+    if(length != len(data) - 2):
+        raise ValueError('Expected message of length {0} but actual received message length is {1}'.format(length, len(data) - 2))
+    
+    if header:
+        for h, d in zip(header, data[2:]):
+            if h != d:
+                raise ValueError('Invalid header')
+        header = header 
 
-        width = 0
-        for key, value in self.fields.items():
-            if len(key) > width:
-                width = len(key)
+    if header:
+        data = data[2 + len(header) : ]
+    else:
+        data = data[2:]
 
-        dump = ''
-        for key, value in self.fields.items():
-            dump = dump + '\t[' + key.ljust(width, ' ') + ']: [' + value.decode('utf-8') + ']\n'
-        return dump
+    return (data[:2], data[2:])
 
 
 class HSM:
@@ -452,7 +438,25 @@ class HSM:
                         trace('<< {} bytes received from {}: '.format(len(data), client_name), data)
 
                     try:
-                        request = Message(data, header=self.header)
+                        command_code, command_data = parse_message(data, header=self.header)
+                        
+                        if command_code == b'BU':
+                            request = BU(command_data)
+                        elif command_code == b'DC':
+                            request = DC(command_data)
+                        elif command_code == b'CA':
+                            request = CA(command_data)
+                        elif command_code == b'CY':
+                            request = CY(command_data)
+                        elif command_code == b'EC':
+                            request = EC(command_data)
+                        elif command_code == b'HC':
+                            request = HC(command_data)
+                        elif command_code == b'NC':
+                            request = NC(command_data)
+                        else:
+                            request = None
+
                         print(request.trace())
                     except ValueError as e:
                         print(e)
@@ -496,7 +500,7 @@ class HSM:
         """
         Get response to CY command
         """
-        response =  Message(data=None, header=self.header)
+        response =  OutgoingMessage(data=None, header=self.header)
         response.set_response_code('CZ')
         
         if not self.check_key_parity(request.get('CVK')):
@@ -523,7 +527,7 @@ class HSM:
         Get response to HC command
         TODO: generating keys for different schemes
         """
-        response =  Message(data=None, header=self.header)
+        response =  OutgoingMessage(data=None, header=self.header)
         response.set_response_code('HD')
         response.set_error_code('00')
 
@@ -563,7 +567,7 @@ class HSM:
         """
         Get response to DC or EC command
         """
-        response =  Message(data=None, header=self.header)
+        response =  OutgoingMessage(data=None, header=self.header)
         command_code = request.get_command_code()
 
         if command_code == b'DC':            
@@ -612,7 +616,7 @@ class HSM:
         """
         Get response to CA command (Translate PIN from TPK to ZPK)
         """
-        response = Message(data=None, header=self.header)
+        response = OutgoingMessage(header=self.header)
         response.set_response_code('CB')
         pinblock_format = request.get('Destination PIN block format')
 
@@ -657,7 +661,7 @@ class HSM:
         """
         Get response to NC command
         """
-        response = Message(data=None, header=self.header)
+        response = OutgoingMessage(header=self.header)
         response.set_response_code('ND')
         response.set_error_code('00')
         response.set('LMK Check Value', key_CV(raw2B(self.LMK), 16))
@@ -670,7 +674,7 @@ class HSM:
         Get response to BU command
         TODO: return different check values (length of 6 or length of 16)
         """
-        response = Message(data=None, header=self.header)
+        response = OutgoingMessage(header=self.header)
         response.set_response_code('BV')
         response.set_error_code('00')
         
@@ -698,7 +702,7 @@ class HSM:
         elif rqst_command_code == b'HC':
             return self.generate_key(request)
         else:
-            response = Message(data=None, header=self.header)
+            response = OutgoingMessage(header=self.header)
             response.set_response_code('ZZ')
             response.set_error_code('00')
             return response
