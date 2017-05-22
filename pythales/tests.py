@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import HSM, Message, BU, CA, CY, DC, HC
+from pythales.hsm import HSM, Message, BU, CA, CY, DC, EC, HC
 
 
 class TestMessageClass(unittest.TestCase):
@@ -170,6 +170,43 @@ class TestCY(unittest.TestCase):
     def test_service_code_parsed(self):
         self.assertEqual(self.cy.fields['Service Code'], b'201')
 
+class TestEC(unittest.TestCase):
+    """
+    00 6a 53 53 53 53 45 43 55 41 45 37 39 44 32 30         .jSSSSECUAE79D20
+    33 46 39 36 34 30 41 39 33 43 46 42 41 31 35 35         3F9640A93CFBA155
+    45 33 34 35 39 35 33 46 36 37 33 33 36 44 35 30         E345953F67336D50
+    43 34 37 31 32 38 44 37 31 30 44 46 34 35 30 42         C47128D710DF450B
+    43 42 32 43 36 34 36 31 42 43 33 32 46 31 30 34         CB2C6461BC32F104
+    41 36 38 34 36 42 44 38 37 30 31 34 30 37 30 30         A6846BD870140700
+    30 30 30 30 30 31 30 31 32 33 34 35                     000001012345
+
+    """
+    def setUp(self):
+        data = b'UAE79D203F9640A93CFBA155E345953F67336D50C47128D710DF450BCB2C6461BC32F104A6846BD870140700000001012345'
+        self.ec = EC(data)
+        self.hsm = HSM(header='SSSS')
+
+    def test_zpk_parsed(self):
+        self.assertEqual(self.ec.fields['ZPK'], b'UAE79D203F9640A93CFBA155E345953F6')
+        
+    def test_pvk_pair_parsed(self):
+        self.assertEqual(self.ec.fields['PVK Pair'], b'7336D50C47128D710DF450BCB2C6461B')
+
+    def test_pin_block_parsed(self):
+        self.assertEqual(self.ec.fields['PIN block'], b'C32F104A6846BD87')
+
+    def test_pin_block_format_code_parsed(self):
+        self.assertEqual(self.ec.fields['PIN block format code'], b'01')
+
+    def test_pan_parsed(self):
+        self.assertEqual(self.ec.fields['Account Number'], b'407000000010')
+
+    def test_pvki_parsed(self):
+        self.assertEqual(self.ec.fields['PVKI'], b'1')
+
+    def test_pvv_parsed(self):
+        self.assertEqual(self.ec.fields['PVV'], b'2345')
+
 
 class TestHC(unittest.TestCase):
     """
@@ -215,7 +252,7 @@ class TestHSM(unittest.TestCase):
         self.hsm = HSM(header='SSSS')
 
     def test_decrypt_pinblock(self):
-        self.assertEqual(self.hsm._decrypt_pinblock(b'2B687AEFC34B1A89', b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF'), b'D694D2659AD26C2E')
+        self.assertEqual(self.hsm._decrypt_pinblock(b'2B687AEFC34B1A89', b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF'), b'2AD242FBD61291DB')
 
     """
     hsm.translate_pinblock()
@@ -230,13 +267,7 @@ class TestHSM(unittest.TestCase):
         data = b'UED4A35D52C9063A1ED4A35D52C9063A1UD39D39EB7C932CF367C97C5B10B2C195127DF366B86AE2D9A70303552000000012'
         self.ca = CA(data)
         with self.assertRaisesRegex(ValueError, 'Unsupported PIN block format: 03'):
-            self.hsm.translate_pinblock(self.ca)
-
-    def test_translate_pinblock(self):
-        data = b'UED4A35D52C9063A1ED4A35D52C9063A1UD39D39EB7C932CF367C97C5B10B2C195127DF366B86AE2D9A70101552000000012'
-        self.ca = CA(data)
-        response = self.hsm.translate_pinblock(self.ca)
-        self.assertEqual(response.build(), b'\x00\x1cSSSSCB0004EEBCB810144AEC3301')   
+            self.hsm.translate_pinblock(self.ca)  
 
     """
     User-defined key

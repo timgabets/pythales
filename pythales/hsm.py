@@ -165,6 +165,58 @@ class CY():
         self.data = self.data[field_size:]
 
 
+class EC():
+    def __init__(self, data):
+        self.data = data
+        self.description = 'Verify an Interchange PIN using ABA PVV method'
+        self.fields = OrderedDict()
+
+        # ZPK
+        if self.data[0:1] in [b'U']:
+            field_size = 33
+        self.fields['ZPK'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # PVK Pair
+        if self.data[0:1] in [b'U']:
+            field_size = 33
+        else:
+            field_size = 32
+        self.fields['PVK Pair'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # PIN block
+        field_size = 16
+        self.fields['PIN block'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # PIN block format code
+        field_size = 2
+        self.fields['PIN block format code'] = self.data[0:field_size]
+        self.data = self.data[field_size:]        
+
+        if self.fields['PIN block format code'] != b'04':
+            # Account Number
+            field_size = 12
+            self.fields['Account Number'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+        else:
+            # Token
+            field_size = 18
+            self.fields['Token'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+
+        # PVKI
+        field_size = 1
+        self.fields['PVKI'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # PVV
+        field_size = 4
+        self.fields['PVV'] = self.data[0:field_size]
+        self.data = self.data[field_size:] 
+
+
 class HC():
     """
     Generate a TMK, TPK or PVK
@@ -229,6 +281,8 @@ class Message:
                 self.fields = CA(self.data[2:]).fields
             elif self.command_code == b'CY':
                 self.fields = CY(self.data[2:]).fields
+            elif self.command_code == b'EC':
+                self.fields = EC(self.data[2:]).fields
             elif self.command_code == b'HC':
                 self.fields = HC(self.data[2:]).fields
             else:
@@ -454,6 +508,14 @@ class HSM:
         return response
 
 
+    def check_key_parity(self, _key):
+        if _key[0:1] in [b'U']:
+            key = _key[1:]
+        else:
+            key = _key
+        return check_key_parity(self.cipher.decrypt(B2raw(key)))
+
+
     def verify_pin(self, request):
         """
         Get response to DC command
@@ -461,23 +523,57 @@ class HSM:
         response =  Message(data=None, header=self.header)
         response.fields['Response Code'] = b'DD'
 
-        TPK = request.fields['TPK']
-        if TPK[0:1] in [b'U']:
-            TPK = TPK[1:]
-        if not check_key_parity(self.cipher.decrypt(B2raw(TPK))):
+        if not self.check_key_parity(request.fields['TPK']):
             self._debug_trace('TPK parity error')
             response.fields['Error Code'] = b'10'
             return response
 
-        PVK = request.fields['PVK Pair']
-        if PVK[0:1] in [b'U']:
-            PVK = PVK[1:]
-        if not check_key_parity(self.cipher.decrypt(B2raw(PVK))):
+        if not self.check_key_parity(request.fields['PVK Pair']):
+            self._debug_trace('PVK parity error')
+            response.fields['Error Code'] = b'11'
+            return response        
+
+        decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
+        self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))
+        
+        try:
+            pin = get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
+            pvv = get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
+            if pvv == request.fields['PVV']:
+                response.fields['Error Code'] = b'00'
+            else:
+                self._debug_trace('PVV mismatch: {} != {}'.format(pvv.decode('utf-8'), request.fields['PVV'].decode('utf-8')))
+                response.fields['Error Code'] = b'01'
+            
+            return response
+
+        except ValueError as err:
+            self._debug_trace(err)
+            response.fields['Error Code'] = b'01'
+            return response
+
+    def verify_interchange_pin(self, request):
+        """
+        Get response to EC command
+        """
+        response =  Message(data=None, header=self.header)
+        response.fields['Response Code'] = b'ED'
+
+        if not self.check_key_parity(request.fields['ZPK']):
+            self._debug_trace('ZPK parity error')
+            response.fields['Error Code'] = b'10'
+            return response
+
+        if not self.check_key_parity(request.fields['PVK Pair']):
             self._debug_trace('PVK parity error')
             response.fields['Error Code'] = b'11'
             return response
 
-        decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
+        if len(request.fields['PVK Pair']) != 32:
+            response.fields['Error Code'] = b'27'
+            return response
+
+        decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['ZPK'])
         self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))
         
         try:
@@ -588,6 +684,8 @@ class HSM:
             return self.translate_pinblock(request)
         elif rqst_command_code == b'CY':
             return self.verify_cvv(request)
+        elif rqst_command_code == b'EC':
+            return self.verify_interchange_pin(request)
         elif rqst_command_code == b'HC':
             return self.generate_key(request)
         else:
