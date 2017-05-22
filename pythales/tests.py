@@ -62,6 +62,23 @@ class TestMessageClass(unittest.TestCase):
         self.assertEqual(m.build(), b'\x00\x0BNG007444321')
 
 
+class TestMessageGet(unittest.TestCase):
+    def setUp(self):
+        self.m = Message(data=None, header=None)
+        self.m.fields['Command Code'] = b'NG'
+        self.m.fields['Response Code'] = b'00'
+        self.m.fields['Data'] = b'7444321'
+
+    def test_get_empty(self):
+        self.assertEqual(self.m.get(''), None)
+
+    def test_get_none(self):
+        self.assertEqual(self.m.get(None), None)
+
+    def test_get_command_code(self):
+        self.assertEqual(self.m.get('Command Code'), b'NG')
+
+
 class TestDC(unittest.TestCase):
     """
     DC command received:

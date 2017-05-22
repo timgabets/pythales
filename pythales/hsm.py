@@ -302,6 +302,19 @@ class Message:
         return self.command_code
 
 
+    def set_response_code(self, response_code):
+        """
+        """
+        self.command_code = response_code
+        self.fields['Response Code'] = response_code
+
+
+    def set_error_code(self, error_code):
+        """
+        """
+        self.fields['Error Code'] = error_code
+
+
     def get_length(self):
         """
         """
@@ -326,6 +339,21 @@ class Message:
             return struct.pack("!H", len(self.header) + len(data)) + self.header + data
         else:
             return struct.pack("!H", len(data)) + data
+
+
+    def get(self, field):
+        """
+        """
+        try:
+            return self.fields[field]
+        except KeyError:
+            return None
+
+
+    def set(self, field, value):
+        """
+        """
+        self.fields[field] = value
 
 
     def trace(self):
@@ -459,22 +487,22 @@ class HSM:
         Get response to CY command
         """
         response =  Message(data=None, header=self.header)
-        response.fields['Response Code'] = b'CZ'
+        response.set_response_code(b'CZ')
         
-        if not self.check_key_parity(request.fields['CVK']):
+        if not self.check_key_parity(request.get('CVK')):
             self._debug_trace('CVK parity error')
-            response.fields['Error Code'] = b'10'
+            response.set_error_code(b'10')
             return response
 
-        CVK = request.fields['CVK']
+        CVK = request.get('CVK')
         if CVK[0:1] in [b'U']:
             CVK = CVK[1:]
-        cvv = get_visa_cvv(request.fields['Primary Account Number'], request.fields['Expiration Date'], request.fields['Service Code'], CVK)
-        if bytes(cvv, 'utf-8') == request.fields['CVV']:
-            response.fields['Error Code'] = b'00'
+        cvv = get_visa_cvv(request.get('Primary Account Number'), request.get('Expiration Date'), request.get('Service Code'), CVK)
+        if bytes(cvv, 'utf-8') == request.get('CVV'):
+            response.set_error_code(b'00')
         else:
-            self._debug_trace('CVV mismatch: {} != {}'.format(cvv, request.fields['CVV'].decode('utf-8')))
-            response.fields['Error Code'] = b'01'
+            self._debug_trace('CVV mismatch: {} != {}'.format(cvv, request.get('CVV').decode('utf-8')))
+            response.set_error_code(b'01')
             
         return response
 
