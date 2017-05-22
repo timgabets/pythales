@@ -13,7 +13,7 @@ from binascii import hexlify, unhexlify
 from pynblock.tools import raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cvv, get_digits_from_string, key_CV, get_clear_pin, check_key_parity, modify_key_parity
 
 class DummyMessage():
-    def __init__(self):
+    def __init__(self, data):
         self.fields = OrderedDict()
 
     def get(self, field):
@@ -263,7 +263,7 @@ class HC(DummyMessage):
         self.data = self.data[field_size:]
 
 
-class Message:
+class Message(DummyMessage):
     def __init__(self, data=None, header=None):
         if data:
             """
@@ -352,15 +352,6 @@ class Message:
             return struct.pack("!H", len(self.header) + len(data)) + self.header + data
         else:
             return struct.pack("!H", len(data)) + data
-
-
-    def get(self, field):
-        """
-        """
-        try:
-            return self.fields[field]
-        except KeyError:
-            return None
 
 
     def set(self, field, value):
