@@ -346,7 +346,7 @@ class Message:
 
 
 class HSM:
-    def __init__(self, port=None, header=None, key=None, debug=False):
+    def __init__(self, port=None, header=None, key=None, debug=False, skip_parity=None):
         self.firmware_version = '0007-E000'
 
         if port:
@@ -366,6 +366,7 @@ class HSM:
         
         self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
         self.debug = debug
+        self.skip_parity_check = skip_parity
 
     
     def info(self):
@@ -459,16 +460,15 @@ class HSM:
         """
         response =  Message(data=None, header=self.header)
         response.fields['Response Code'] = b'CZ'
-
-        CVK = request.fields['CVK']
-        if CVK[0:1] in [b'U']:
-            CVK = CVK[1:]
         
-        if not check_key_parity(self.cipher.decrypt(B2raw(CVK))):
+        if not self.check_key_parity(request.fields['CVK']):
             self._debug_trace('CVK parity error')
             response.fields['Error Code'] = b'10'
             return response
 
+        CVK = request.fields['CVK']
+        if CVK[0:1] in [b'U']:
+            CVK = CVK[1:]
         cvv = get_visa_cvv(request.fields['Primary Account Number'], request.fields['Expiration Date'], request.fields['Service Code'], CVK)
         if bytes(cvv, 'utf-8') == request.fields['CVV']:
             response.fields['Error Code'] = b'00'
@@ -509,11 +509,16 @@ class HSM:
 
 
     def check_key_parity(self, _key):
-        if _key[0:1] in [b'U']:
-            key = _key[1:]
+        """
+        """
+        if self.skip_parity_check:
+            return True
         else:
-            key = _key
-        return check_key_parity(self.cipher.decrypt(B2raw(key)))
+            if _key[0:1] in [b'U']:
+                key = _key[1:]
+            else:
+                key = _key
+            return check_key_parity(self.cipher.decrypt(B2raw(key)))
 
 
     def verify_pin(self, request):
@@ -608,20 +613,13 @@ class HSM:
             raise ValueError('Unsupported PIN block format: {}'.format(request.fields['Source PIN block format'].decode('utf-8')))
 
         # Source key parity check
-        TPK = request.fields['TPK']
-        if TPK[0:1] in [b'U']:
-            TPK = TPK[1:]
-        if not check_key_parity(self.cipher.decrypt(B2raw(TPK))):
+        if not self.check_key_parity(request.fields['TPK']):
             self._debug_trace('Source TPK parity error')
             response.fields['Error Code'] = b'10'
             return response
 
         # Destination key parity check
-        if request.fields['Destination Key'][0:1] in [b'U']:
-            destination_key = request.fields['Destination Key'][1:]
-        else:
-            destination_key = request.fields['Destination Key']
-        if not check_key_parity(self.cipher.decrypt(B2raw(destination_key))):
+        if not self.check_key_parity(request.fields['Destination Key']):
             self._debug_trace('Destination ZPK parity error')
             response.fields['Error Code'] = b'11'
             return response
@@ -631,6 +629,10 @@ class HSM:
         
         pin_length = decrypted_pinblock[0:2]
 
+        if request.fields['Destination Key'][0:1] in [b'U']:
+            destination_key = request.fields['Destination Key'][1:]
+        else:
+            destination_key = request.fields['Destination Key']
         cipher = DES3.new(B2raw(destination_key), DES3.MODE_ECB)
         translated_pin_block = cipher.encrypt(B2raw(decrypted_pinblock))
 
@@ -705,6 +707,7 @@ def show_help(name):
     print('  -k, --key=[KEY]\t\tTCP port to listen, 1500 by default')
     print('  -h, --header=[HEADER]\t\tmessage header, empty by default')
     print('  -d, --debug\t\t\tEnable debug mode (show CVV/PVV mismatch etc)')
+    print('  -s, --skip-parity\t\t\tSkip key parity checks')
 
 
 if __name__ == '__main__':
@@ -712,8 +715,9 @@ if __name__ == '__main__':
     header = ''
     key = None
     debug = False
+    skip_parity = None
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'h:p:k:d', ['header=', 'port=', 'key=', 'debug'])
+    optlist, args = getopt.getopt(sys.argv[1:], 'h:p:k:ds', ['header=', 'port=', 'key=', 'debug', 'skip-parity'])
     for opt, arg in optlist:
         if opt in ('-h', '--header'):
             header = arg
@@ -727,9 +731,11 @@ if __name__ == '__main__':
             key = arg
         elif opt in ('-d', '--debug'):
             debug = True
+        elif opt in ('-s', '--skip-parity'):
+            skip_parity = True
         else:
             show_help(sys.argv[0])
             sys.exit()
 
-    hsm = HSM(port=port, header=header, key=key, debug=debug)
+    hsm = HSM(port=port, header=header, key=key, debug=debug, skip_parity=skip_parity)
     hsm.run()
