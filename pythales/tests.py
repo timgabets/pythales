@@ -280,5 +280,34 @@ class TestHSM(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.hsm = HSM(key='iddqdeef deadbeef deadbeef deadbeef')
 
+    """
+    verify_pin()
+    """
+    def test_verify_pin_EC(self):
+        """
+        00 6a 53 53 53 53 45 43 55 38 32 37 45 36 37 42         .jSSSSECU827E67B
+        35 39 41 31 44 36 42 38 46 38 32 37 45 36 37 42         59A1D6B8F827E67B
+        35 39 41 31 44 36 42 38 46 37 33 33 36 44 35 30         59A1D6B8F7336D50
+        43 34 37 31 32 38 44 37 31 30 44 46 34 35 30 42         C47128D710DF450B
+        43 42 32 43 36 34 36 31 42 43 33 32 46 31 30 34         CB2C6461BC32F104
+        41 36 38 34 36 42 44 38 37 30 31 34 30 37 30 30         A6846BD870140700
+        30 30 30 30 30 31 30 31 33 38 34 33                     000001013843
+        
+        [ZPK                  ]: [U827E67B59A1D6B8F827E67B59A1D6B8F]
+        [PVK Pair             ]: [7336D50C47128D710DF450BCB2C6461B]
+        [PIN block            ]: [C32F104A6846BD87]
+        [PIN block format code]: [01]
+        [Account Number       ]: [407000000010]
+        [PVKI                 ]: [1]
+        [PVV                  ]: [3843]
+        """
+        #data = b'U827E67B59A1D6B8F827E67B59A1D6B8F7336D50C47128D710DF450BCB2C6461BC32F104A6846BD870140700000001013843'
+        #request = EC(data)
+        #reponse = self.hsm.verify_pin(request)
+        #self.assertEqual(response.fields['Response Code'], b'ED')
+
+
+
+
 if __name__ == '__main__':
     unittest.main()

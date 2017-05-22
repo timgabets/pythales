@@ -1,5 +1,6 @@
 
 May 2017
+	0.53 Using verify_pin() for DC/EC command processing
 	0.52 --skip-parity option to skip key parity checks
 	0.51 EC command support (Verify an Interchange PIN using ABA PVV method)
 	0.50 Fixed modify_key_parity() bug in generate_key()

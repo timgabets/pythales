@@ -523,62 +523,35 @@ class HSM:
 
     def verify_pin(self, request):
         """
-        Get response to DC command
+        Get response to DC or EC command
         """
         response =  Message(data=None, header=self.header)
-        response.fields['Response Code'] = b'DD'
+        command_code = request.get_command_code()
 
-        if not self.check_key_parity(request.fields['TPK']):
-            self._debug_trace('TPK parity error')
+        if command_code == b'DC':
+            response.fields['Response Code'] = b'DD'
+            key_type = 'TPK'
+        elif command_code == b'EC':
+            response.fields['Response Code'] = b'ED'
+            key_type = 'ZPK'
+
+
+        if not self.check_key_parity(request.fields[key_type]):
+            self._debug_trace(key_type + ' parity error')
             response.fields['Error Code'] = b'10'
             return response
 
         if not self.check_key_parity(request.fields['PVK Pair']):
             self._debug_trace('PVK parity error')
             response.fields['Error Code'] = b'11'
-            return response        
-
-        decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['TPK'])
-        self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))
-        
-        try:
-            pin = get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
-            pvv = get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
-            if pvv == request.fields['PVV']:
-                response.fields['Error Code'] = b'00'
-            else:
-                self._debug_trace('PVV mismatch: {} != {}'.format(pvv.decode('utf-8'), request.fields['PVV'].decode('utf-8')))
-                response.fields['Error Code'] = b'01'
-            
-            return response
-
-        except ValueError as err:
-            self._debug_trace(err)
-            response.fields['Error Code'] = b'01'
-            return response
-
-    def verify_interchange_pin(self, request):
-        """
-        Get response to EC command
-        """
-        response =  Message(data=None, header=self.header)
-        response.fields['Response Code'] = b'ED'
-
-        if not self.check_key_parity(request.fields['ZPK']):
-            self._debug_trace('ZPK parity error')
-            response.fields['Error Code'] = b'10'
-            return response
-
-        if not self.check_key_parity(request.fields['PVK Pair']):
-            self._debug_trace('PVK parity error')
-            response.fields['Error Code'] = b'11'
-            return response
+            return response     
 
         if len(request.fields['PVK Pair']) != 32:
+            self._debug_trace('PVK not double length')
             response.fields['Error Code'] = b'27'
             return response
 
-        decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields['ZPK'])
+        decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields[key_type])
         self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))
         
         try:
@@ -680,14 +653,12 @@ class HSM:
             return self.get_key_check_value(request)
         elif rqst_command_code == b'NC':
             return self.get_diagnostics_data()
-        elif rqst_command_code == b'DC':
+        elif rqst_command_code in [b'DC', b'EC']:
             return self.verify_pin(request)
         elif rqst_command_code == b'CA':
             return self.translate_pinblock(request)
         elif rqst_command_code == b'CY':
             return self.verify_cvv(request)
-        elif rqst_command_code == b'EC':
-            return self.verify_interchange_pin(request)
         elif rqst_command_code == b'HC':
             return self.generate_key(request)
         else:
