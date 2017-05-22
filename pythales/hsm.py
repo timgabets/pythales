@@ -563,31 +563,31 @@ class HSM:
             response.set_response_code('ED')
             key_type = 'ZPK'
 
-        if not self.check_key_parity(request.fields[key_type]):
+        if not self.check_key_parity(request.get(key_type)):
             self._debug_trace(key_type + ' parity error')
             response.set_error_code('10')
             return response
 
-        if not self.check_key_parity(request.fields['PVK Pair']):
+        if not self.check_key_parity(request.get('PVK Pair')):
             self._debug_trace('PVK parity error')
             response.set_error_code('11')
             return response     
 
-        if len(request.fields['PVK Pair']) != 32:
+        if len(request.get('PVK Pair')) != 32:
             self._debug_trace('PVK not double length')
             response.set_error_code('27')
             return response
 
-        decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields[key_type])
+        decrypted_pinblock = self._decrypt_pinblock(request.get('PIN block'), request.get(key_type))
         self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))
         
         try:
-            pin = get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
-            pvv = get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
-            if pvv == request.fields['PVV']:
+            pin = get_clear_pin(decrypted_pinblock, request.get('Account Number'))
+            pvv = get_visa_pvv(request.get('Account Number'), request.get('PVKI'), pin[:4], request.get('PVK Pair'))
+            if pvv == request.get('PVV'):
                 response.set_error_code('00')
             else:
-                self._debug_trace('PVV mismatch: {} != {}'.format(pvv.decode('utf-8'), request.fields['PVV'].decode('utf-8')))
+                self._debug_trace('PVV mismatch: {} != {}'.format(pvv.decode('utf-8'), request.get('PVV').decode('utf-8')))
                 response.set_error_code('01')
 
             
@@ -605,35 +605,35 @@ class HSM:
         """
         response = Message(data=None, header=self.header)
         response.set_response_code('CB')
-        pinblock_format = request.fields['Destination PIN block format']
+        pinblock_format = request.get('Destination PIN block format')
 
-        if request.fields['Destination PIN block format'] != request.fields['Source PIN block format']:
-            raise ValueError('Cannot translate PIN block from format {} to format {}'.format(request.fields['Source PIN block format'].decode('utf-8'), request.fields['Destination PIN block format'].decode('utf-8')))
+        if request.get('Destination PIN block format') != request.get('Source PIN block format'):
+            raise ValueError('Cannot translate PIN block from format {} to format {}'.format(request.get('Source PIN block format').decode('utf-8'), request.get('Destination PIN block format').decode('utf-8')))
 
-        if request.fields['Source PIN block format'] != b'01':
-            raise ValueError('Unsupported PIN block format: {}'.format(request.fields['Source PIN block format'].decode('utf-8')))
+        if request.get('Source PIN block format') != b'01':
+            raise ValueError('Unsupported PIN block format: {}'.format(request.get('Source PIN block format').decode('utf-8')))
 
         # Source key parity check
-        if not self.check_key_parity(request.fields['TPK']):
+        if not self.check_key_parity(request.get('TPK')):
             self._debug_trace('Source TPK parity error')
             response.set_error_code('10')
             return response
 
         # Destination key parity check
-        if not self.check_key_parity(request.fields['Destination Key']):
+        if not self.check_key_parity(request.get('Destination Key')):
             self._debug_trace('Destination ZPK parity error')
             response.set_error_code('11')
             return response
 
-        decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
+        decrypted_pinblock = self._decrypt_pinblock(request.get('Source PIN block'), request.get('TPK'))
         self._debug_trace('Decrypted pinblock: {}'.format(decrypted_pinblock.decode('utf-8')))
         
         pin_length = decrypted_pinblock[0:2]
 
-        if request.fields['Destination Key'][0:1] in [b'U']:
-            destination_key = request.fields['Destination Key'][1:]
+        if request.get('Destination Key')[0:1] in [b'U']:
+            destination_key = request.get('Destination Key')[1:]
         else:
-            destination_key = request.fields['Destination Key']
+            destination_key = request.get('Destination Key')
         cipher = DES3.new(B2raw(destination_key), DES3.MODE_ECB)
         translated_pin_block = cipher.encrypt(B2raw(decrypted_pinblock))
 
@@ -666,8 +666,8 @@ class HSM:
         response.set_response_code('BV')
         response.set_error_code('00')
         
-        if request.fields['Key'][0:1] in [b'U']:
-            key = request.fields['Key'][1:]
+        if request.get('Key')[0:1] in [b'U']:
+            key = request.get('Key')[1:]
 
         response.fields['Key Check Value'] = key_CV(key, 16)
         return response
