@@ -306,13 +306,13 @@ class Message:
         """
         """
         self.command_code = response_code
-        self.fields['Response Code'] = response_code
+        self.fields['Response Code'] = bytes(response_code, 'utf-8')
 
 
     def set_error_code(self, error_code):
         """
         """
-        self.fields['Error Code'] = error_code
+        self.fields['Error Code'] = bytes(error_code, 'utf-8')
 
 
     def get_length(self):
@@ -487,11 +487,11 @@ class HSM:
         Get response to CY command
         """
         response =  Message(data=None, header=self.header)
-        response.set_response_code(b'CZ')
+        response.set_response_code('CZ')
         
         if not self.check_key_parity(request.get('CVK')):
             self._debug_trace('CVK parity error')
-            response.set_error_code(b'10')
+            response.set_error_code('10')
             return response
 
         CVK = request.get('CVK')
@@ -499,10 +499,10 @@ class HSM:
             CVK = CVK[1:]
         cvv = get_visa_cvv(request.get('Primary Account Number'), request.get('Expiration Date'), request.get('Service Code'), CVK)
         if bytes(cvv, 'utf-8') == request.get('CVV'):
-            response.set_error_code(b'00')
+            response.set_error_code('00')
         else:
             self._debug_trace('CVV mismatch: {} != {}'.format(cvv, request.get('CVV').decode('utf-8')))
-            response.set_error_code(b'01')
+            response.set_error_code('01')
             
         return response
 
@@ -513,16 +513,16 @@ class HSM:
         TODO: generating keys for different schemes
         """
         response =  Message(data=None, header=self.header)
-        response.fields['Response Code'] = b'HD'
-        response.fields['Error Code'] = b'00'
+        response.set_response_code('HD')
+        response.set_error_code('00')
 
         new_clear_key = modify_key_parity(bytes(os.urandom(16)))
         self._debug_trace('Generated key: {}'.format(raw2str(new_clear_key)))
 
-        if request.fields['Current Key'][0:1] in [b'U']:
-            current_key = request.fields['Current Key'][1:]
+        if request.get('Current Key')[0:1] in [b'U']:
+            current_key = request.get('Current Key')[1:]
         else:
-            current_key = request.fields['Current Key']
+            current_key = request.get('Current Key')
 
         clear_current_key = self.cipher.decrypt(B2raw(current_key))
         curr_key_cipher = DES3.new(clear_current_key, DES3.MODE_ECB)
@@ -530,8 +530,8 @@ class HSM:
         new_key_under_current_key = curr_key_cipher.encrypt(new_clear_key)
         new_key_under_lmk = self.cipher.encrypt(new_clear_key)
 
-        response.fields['New key under the current key'] = b'U' + raw2B(new_key_under_current_key)
-        response.fields['New key under LMK'] = b'U' + raw2B(new_key_under_lmk)
+        response.set('New key under the current key', 'U' + raw2str(new_key_under_current_key))
+        response.set('New key under LMK', 'U' + raw2str(new_key_under_lmk))
 
         return response
 
@@ -566,17 +566,17 @@ class HSM:
 
         if not self.check_key_parity(request.fields[key_type]):
             self._debug_trace(key_type + ' parity error')
-            response.fields['Error Code'] = b'10'
+            response.set_error_code('10')
             return response
 
         if not self.check_key_parity(request.fields['PVK Pair']):
             self._debug_trace('PVK parity error')
-            response.fields['Error Code'] = b'11'
+            response.set_error_code('11')
             return response     
 
         if len(request.fields['PVK Pair']) != 32:
             self._debug_trace('PVK not double length')
-            response.fields['Error Code'] = b'27'
+            response.set_error_code('27')
             return response
 
         decrypted_pinblock = self._decrypt_pinblock(request.fields['PIN block'], request.fields[key_type])
@@ -586,16 +586,17 @@ class HSM:
             pin = get_clear_pin(decrypted_pinblock, request.fields['Account Number'])
             pvv = get_visa_pvv(request.fields['Account Number'], request.fields['PVKI'], pin[:4], request.fields['PVK Pair'])
             if pvv == request.fields['PVV']:
-                response.fields['Error Code'] = b'00'
+                response.set_error_code('00')
             else:
                 self._debug_trace('PVV mismatch: {} != {}'.format(pvv.decode('utf-8'), request.fields['PVV'].decode('utf-8')))
-                response.fields['Error Code'] = b'01'
+                response.set_error_code('01')
+
             
             return response
 
         except ValueError as err:
             self._debug_trace(err)
-            response.fields['Error Code'] = b'01'
+            response.set_error_code('01')
             return response
 
 
@@ -616,13 +617,13 @@ class HSM:
         # Source key parity check
         if not self.check_key_parity(request.fields['TPK']):
             self._debug_trace('Source TPK parity error')
-            response.fields['Error Code'] = b'10'
+            response.set_error_code('10')
             return response
 
         # Destination key parity check
         if not self.check_key_parity(request.fields['Destination Key']):
             self._debug_trace('Destination ZPK parity error')
-            response.fields['Error Code'] = b'11'
+            response.set_error_code('11')
             return response
 
         decrypted_pinblock = self._decrypt_pinblock(request.fields['Source PIN block'], request.fields['TPK'])
@@ -637,7 +638,7 @@ class HSM:
         cipher = DES3.new(B2raw(destination_key), DES3.MODE_ECB)
         translated_pin_block = cipher.encrypt(B2raw(decrypted_pinblock))
 
-        response.fields['Error Code'] = b'00'
+        response.set_error_code('00')
         response.fields['PIN Length'] = decrypted_pinblock[0:2]
         response.fields['Destination PIN Block'] = raw2B(translated_pin_block)
         response.fields['Destination PIN Block format'] = pinblock_format
@@ -650,8 +651,8 @@ class HSM:
         Get response to NC command
         """
         response = Message(data=None, header=self.header)
-        response.fields['Response Code'] = b'ND' 
-        response.fields['Error Code'] = b'00' 
+        response.set_response_code('ND')
+        response.set_error_code('00')
         response.fields['LMK Check Value'] = key_CV(raw2B(self.LMK), 16)
         response.fields['Firmware Version'] = bytes(self.firmware_version, 'utf-8')
         return response
@@ -663,8 +664,8 @@ class HSM:
         TODO: return different check values (length of 6 or length of 16)
         """
         response = Message(data=None, header=self.header)
-        response.fields['Response Code'] = b'BV' 
-        response.fields['Error Code'] = b'00'
+        response.set_response_code('BV')
+        response.set_error_code('00')
         
         if request.fields['Key'][0:1] in [b'U']:
             key = request.fields['Key'][1:]
@@ -691,8 +692,8 @@ class HSM:
             return self.generate_key(request)
         else:
             response = Message(data=None, header=self.header)
-            response.fields['Response Code'] = b'ZZ'
-            response.fields['Error Code'] = b'00'
+            response.set_response_code('ZZ')
+            response.set_error_code('00')
             return response
 
 
