@@ -530,8 +530,8 @@ class HSM:
         new_key_under_current_key = curr_key_cipher.encrypt(new_clear_key)
         new_key_under_lmk = self.cipher.encrypt(new_clear_key)
 
-        response.set('New key under the current key', 'U' + raw2str(new_key_under_current_key))
-        response.set('New key under LMK', 'U' + raw2str(new_key_under_lmk))
+        response.set('New key under the current key', b'U' + raw2B(new_key_under_current_key))
+        response.set('New key under LMK', b'U' + raw2B(new_key_under_lmk))
 
         return response
 
@@ -638,9 +638,9 @@ class HSM:
         translated_pin_block = cipher.encrypt(B2raw(decrypted_pinblock))
 
         response.set_error_code('00')
-        response.fields['PIN Length'] = decrypted_pinblock[0:2]
-        response.fields['Destination PIN Block'] = raw2B(translated_pin_block)
-        response.fields['Destination PIN Block format'] = pinblock_format
+        response.set('PIN Length', decrypted_pinblock[0:2])
+        response.set('Destination PIN Block', raw2B(translated_pin_block))
+        response.set('Destination PIN Block format', pinblock_format)
 
         return response
 
@@ -652,8 +652,8 @@ class HSM:
         response = Message(data=None, header=self.header)
         response.set_response_code('ND')
         response.set_error_code('00')
-        response.fields['LMK Check Value'] = key_CV(raw2B(self.LMK), 16)
-        response.fields['Firmware Version'] = bytes(self.firmware_version, 'utf-8')
+        response.set('LMK Check Value', key_CV(raw2B(self.LMK), 16))
+        response.set('Firmware Version', bytes(self.firmware_version, 'utf-8'))
         return response
 
 
@@ -669,7 +669,7 @@ class HSM:
         if request.get('Key')[0:1] in [b'U']:
             key = request.get('Key')[1:]
 
-        response.fields['Key Check Value'] = key_CV(key, 16)
+        response.set('Key Check Value', key_CV(key, 16))
         return response
 
 
