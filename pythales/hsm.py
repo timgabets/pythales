@@ -24,6 +24,11 @@ class DummyMessage():
         except KeyError:
             return None
 
+    def set(self, field, value):
+        """
+        """
+        self.fields[field] = value
+
 
 class BU(DummyMessage):
     def __init__(self, data):
@@ -352,12 +357,6 @@ class Message(DummyMessage):
             return struct.pack("!H", len(self.header) + len(data)) + self.header + data
         else:
             return struct.pack("!H", len(data)) + data
-
-
-    def set(self, field, value):
-        """
-        """
-        self.fields[field] = value
 
 
     def trace(self):
