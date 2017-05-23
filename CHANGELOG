@@ -1,5 +1,6 @@
 
 May 2017
+	0.56 Fixed NameError: name 'sys' is not defined
 	0.55 Added examples/hsm_server.py + Added README usage stuff
 	0.54 Command class inheritance changed, Message() class -> OutgoingMessage() class
 	0.53 Using verify_pin() for DC/EC command processing
