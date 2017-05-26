@@ -1,10 +1,10 @@
 from setuptools import setup
 
 setup(name='pythales',
-      version='0.56',
+      version='0.57',
       
       description='python thales hsm simulator',
-      long_description=open('README').read(),
+      long_description=open('README.rst').read(),
       
       classifiers=[
         'License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)',
