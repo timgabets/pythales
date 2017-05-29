@@ -1,5 +1,6 @@
 
 May 2017
+	0.56 Using ternary operator 
 	0.57 README -> README.rst
 	0.56 Fixed NameError: name 'sys' is not defined
 	0.55 Added examples/hsm_server.py + Added README usage stuff

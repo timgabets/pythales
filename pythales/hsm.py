@@ -89,14 +89,10 @@ class DC(DummyMessage):
             self.data = self.data[field_size:]
 
         # PVK
-        if self.data[0:1] in [b'U']:
-            field_size = 33            
-            self.fields['PVK Pair'] = self.data[0:field_size]
-            self.data = self.data[field_size:]
-        else:
-            field_size = 32
-            self.fields['PVK Pair'] = self.data[0:field_size]
-            self.data = self.data[field_size:]
+        field_size = 33 if self.data[0:1] in [b'U'] else 32
+            
+        self.fields['PVK Pair'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
 
         # PIN block
         field_size = 16
@@ -222,10 +218,7 @@ class EC(DummyMessage):
         self.data = self.data[field_size:]
 
         # PVK Pair
-        if self.data[0:1] in [b'U']:
-            field_size = 33
-        else:
-            field_size = 32
+        field_size = 33 if self.data[0:1] in [b'U'] else 32
         self.fields['PVK Pair'] = self.data[0:field_size]
         self.data = self.data[field_size:]
 
@@ -272,11 +265,7 @@ class HC(DummyMessage):
         self.fields = OrderedDict()
 
         # Current Key
-        if self.data[0:1] in [b'U']:
-            field_size = 33
-        else:
-            field_size = 16
-
+        field_size = 33 if self.data[0:1] in [b'U'] else 16
         self.fields['Current Key'] = self.data[0:field_size]
         self.data = self.data[field_size:]
 
@@ -333,10 +322,7 @@ class OutgoingMessage(DummyMessage):
         for key, value in self.fields.items():
             data += value
 
-        if self.header:
-            return struct.pack("!H", len(self.header) + len(data)) + self.header + data
-        else:
-            return struct.pack("!H", len(data)) + data
+        return struct.pack("!H", len(self.header) + len(data)) + self.header + data if self.header else struct.pack("!H", len(data)) + data
 
 
 def parse_message(data=None, header=None):
@@ -356,11 +342,7 @@ def parse_message(data=None, header=None):
                 raise ValueError('Invalid header')
         header = header 
 
-    if header:
-        data = data[2 + len(header) : ]
-    else:
-        data = data[2:]
-
+    data = data[2 + len(header) : ] if header else data[2:]
     return (data[:2], data[2:])
 
 
@@ -368,21 +350,9 @@ class HSM:
     def __init__(self, port=None, header=None, key=None, debug=False, skip_parity=None):
         self.firmware_version = '0007-E000'
 
-        if port:
-            self.port = port
-        else:
-            self.port = 1500
-
-        if header:
-            self.header = str2bytes(header)
-        else:
-            self.header = b''
-
-        if key:
-            self.LMK = unhexlify(key)
-        else:
-            self.LMK = unhexlify('deafbeedeafbeedeafbeedeafbeedeaf')
-        
+        self.port = port if port else 1500
+        self.header = str2bytes(header) if header else b''
+        self.LMK = unhexlify(key) if key else unhexlify('deafbeedeafbeedeafbeedeafbeedeaf')
         self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
         self.debug = debug
         self.skip_parity_check = skip_parity
@@ -551,10 +521,7 @@ class HSM:
         if self.skip_parity_check:
             return True
         else:
-            if _key[0:1] in [b'U']:
-                key = _key[1:]
-            else:
-                key = _key
+            key = _key[1:] if _key[0:1] in [b'U'] else _key
             return check_key_parity(self.cipher.decrypt(B2raw(key)))
 
 
