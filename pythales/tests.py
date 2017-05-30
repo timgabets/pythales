@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import HSM, OutgoingMessage, BU, CA, CY, DC, EC, HC, parse_message
+from pythales.hsm import HSMThread, OutgoingMessage, BU, CA, CY, DC, EC, HC, parse_message
 
 class TestParseMessage(unittest.TestCase):
     """
@@ -238,9 +238,9 @@ class TestBU(unittest.TestCase):
 
 
 
-class TestHSM(unittest.TestCase):
+class TestHSMThread(unittest.TestCase):
     def setUp(self):
-        self.hsm = HSM(header='SSSS', skip_parity=True)
+        self.hsm = HSMThread(header='SSSS', skip_parity=True)
 
     def test_decrypt_pinblock(self):
         self.assertEqual(self.hsm._decrypt_pinblock(b'2B687AEFC34B1A89', b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF'), b'2AD242FBD61291DB')
@@ -265,11 +265,11 @@ class TestHSM(unittest.TestCase):
     """
     def test_user_defined_key_wrong_key_size(self):
         with self.assertRaises(ValueError):
-            self.hsm = HSM(key='DEADBEAF')
+            self.hsm = HSMThread(key='DEADBEAF')
 
     def test_user_defined_key_value(self):
         with self.assertRaises(ValueError):
-            self.hsm = HSM(key='iddqdeef deadbeef deadbeef deadbeef')
+            self.hsm = HSMThread(key='iddqdeef deadbeef deadbeef deadbeef')
 
     """
     verify_pin()

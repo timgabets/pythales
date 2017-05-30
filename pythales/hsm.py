@@ -356,7 +356,7 @@ class HSM():
         self.firmware_version = '0007-E000'
         self.port = port if port else 1500
         self.header = str2bytes(header) if header else b''
-        self.LMK = unhexlify(key) if key else unhexlify('deafbeedeafbeedeafbeedeafbeedeaf')
+        self.LMK = key
         self.debug = debug
         self.skip_parity = skip_parity
 
@@ -391,7 +391,7 @@ class HSM():
         try:
             while True:
                 (conn, (ip, port)) = self.sock.accept()
-                thread = ClientThread(self.firmware_version, self.header, self.LMK, self.debug, self.skip_parity, conn, ip, port) 
+                thread = HSMThread(self.firmware_version, self.header, self.LMK, self.debug, self.skip_parity, conn, ip, port) 
                 thread.start() 
                 connections.append(conn) 
 
@@ -405,23 +405,23 @@ class HSM():
         print('Exit')
 
 
-class ClientThread(Thread):
-    def __init__(self, firmware_version, header, LMK, debug, skip_parity, conn, ip, port):
+class HSMThread(Thread):
+    def __init__(self, firmware_version=None, header=None, key=None, debug=None, skip_parity=None, conn=None, ip=None, port=None):
         Thread.__init__(self)
         
         self.firmware_version = firmware_version
         self.header = header
-        self.LMK = LMK
+        self.LMK = unhexlify(key) if key else unhexlify('deafbeedeafbeedeafbeedeafbeedeaf')
         self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
         self.debug = debug
         self.skip_parity_check = skip_parity
         self.conn = conn
 
+
+    def run(self):
         self.client_name = ip + ':' + str(port)
         print ('Connected client: {}'.format(self.client_name))
 
-
-    def run(self):
         while True:
             try:
                 data = self.conn.recv(4096)
