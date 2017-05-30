@@ -9,6 +9,8 @@ from collections import OrderedDict
 from Crypto.Cipher import DES, DES3
 from binascii import hexlify, unhexlify
 from pynblock.tools import str2bytes, raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cvv, get_digits_from_string, key_CV, get_clear_pin, check_key_parity, modify_key_parity
+from threading import Thread
+
 
 class DummyMessage():
     def __init__(self, data):
@@ -344,21 +346,19 @@ def parse_message(data=None, header=None):
 
     data = data[2 + len(header) : ] if header else data[2:]
     return (data[:2], data[2:])
+        
 
-
-class HSM:
+class HSM():
     def __init__(self, port=None, header=None, key=None, debug=False, skip_parity=None):
         self.firmware_version = '0007-E000'
-
         self.port = port if port else 1500
         self.header = str2bytes(header) if header else b''
         self.LMK = unhexlify(key) if key else unhexlify('deafbeedeafbeedeafbeedeafbeedeaf')
-        self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
         self.debug = debug
-        self.skip_parity_check = skip_parity
+        self.skip_parity = skip_parity
 
     
-    def info(self):
+    def show_info(self):
         """
         """
         dump = ''
@@ -369,19 +369,12 @@ class HSM:
         return dump
 
 
-    def _debug_trace(self, data):
-        """
-        """
-        if self.debug:
-            print('\tDEBUG: {}\n'.format(data))
-
-
-    def _init_connection(self):
+    def init_connection(self):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.bind(('', self.port))   
             self.sock.listen(5)
-            print(self.info())
+            print(self.show_info())
             print('Listening on port {}'.format(self.port))
         except OSError as msg:
             print('Error starting server: {}'.format(msg))
@@ -389,62 +382,83 @@ class HSM:
         
 
     def run(self):
-        self._init_connection()
+        self.init_connection()
 
+        threads = []
         while True:
-            try:
-                conn, addr = self.sock.accept()
-                client_name = addr[0] + ':' + str(addr[1])
-                print ('Connected client: {}'.format(client_name))
+            (conn, (ip, port)) = self.sock.accept()
+            thread = ClientThread(self.firmware_version, self.header, self.LMK, self.debug, self.skip_parity, conn, ip, port) 
+            thread.start() 
+            threads.append(thread) 
 
-                while True:
-                    data = conn.recv(4096)
-                    if len(data):
-                        trace('<< {} bytes received from {}: '.format(len(data), client_name), data)
-
-                    try:
-                        command_code, command_data = parse_message(data, header=self.header)
-                        
-                        if command_code == b'BU':
-                            request = BU(command_data)
-                        elif command_code == b'CA':
-                            request = CA(command_data)
-                        elif command_code == b'CY':
-                            request = CY(command_data)
-                        elif command_code == b'DC':
-                            request = DC(command_data)
-                        elif command_code == b'EC':
-                            request = EC(command_data)
-                        elif command_code == b'HC':
-                            request = HC(command_data)
-                        elif command_code == b'NC':
-                            request = NC(command_data)
-                        else:
-                            request = None
-
-                        print(request.trace())
-                    except ValueError as e:
-                        print(e)
-                        continue
-
-                    response = self.get_response(request)
-                    response_data = response.build()
-                    conn.send(response_data)
-
-                    trace('>> {} bytes sent to {}:'.format(len(response_data), client_name), response_data)
-                    print(response.trace())
-    
-            except KeyboardInterrupt:
-                break
-            
-            except:
-                print('RUNTIME ERROR: {}\n'.format(sys.exc_info()[1]))
-                print('Disconnected client: {}'.format(client_name))
-                conn.close()
-                continue
+        for t in threads:
+            t.join()
 
         self.sock.close()
         print('Exit')
+
+
+class ClientThread(Thread):
+    def __init__(self, firmware_version, header, LMK, debug, skip_parity, conn, ip, port):
+        Thread.__init__(self)
+        
+        self.firmware_version = firmware_version
+        self.header = header
+        self.LMK = LMK
+        self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
+        self.debug = debug
+        self.skip_parity_check = skip_parity
+        self.conn = conn
+
+        self.client_name = ip + ':' + str(port)
+        print ('Connected client: {}'.format(self.client_name))
+
+
+    def run(self):
+        while True:
+            data = self.conn.recv(4096)
+            if len(data):
+                trace('<< {} bytes received from {}: '.format(len(data), self.client_name), data)
+
+            try:
+                command_code, command_data = parse_message(data, header=self.header)
+                if command_code == b'BU':
+                    request = BU(command_data)
+                elif command_code == b'CA':
+                    request = CA(command_data)
+                elif command_code == b'CY':
+                    request = CY(command_data)
+                elif command_code == b'DC':
+                    request = DC(command_data)
+                elif command_code == b'EC':
+                    request = EC(command_data)
+                elif command_code == b'HC':
+                    request = HC(command_data)
+                elif command_code == b'NC':
+                    request = NC(command_data)
+                else:
+                    request = None
+
+                print(request.trace())
+            except ValueError as e:
+                print(e)
+                continue
+
+            response = self.get_response(request)
+            response_data = response.build()
+            self.conn.send(response_data)
+
+            trace('>> {} bytes sent to {}:'.format(len(response_data), self.client_name), response_data)
+            print(response.trace())
+
+        print('Loop end')
+
+
+    def _debug_trace(self, data):
+        """
+        """
+        if self.debug:
+            print('\tDEBUG: {}\n'.format(data))
 
 
     def _decrypt_pinblock(self, encrypted_pinblock, encrypted_terminal_key):
