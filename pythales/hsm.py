@@ -360,24 +360,12 @@ class HSM():
         self.debug = debug
         self.skip_parity = skip_parity
 
-    
-    def show_info(self):
-        """
-        """
-        dump = ''
-        dump += 'LMK: {}\n'.format(raw2str(self.LMK))
-        dump += 'Firmware version: {}\n'.format(self.firmware_version)
-        if self.header:
-            dump += 'Message header: {}\n'.format(self.header.decode('utf-8'))
-        return dump
-
 
     def init_connection(self):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.bind(('', self.port))   
             self.sock.listen(5)
-            print(self.show_info())
             print('Listening on port {}'.format(self.port))
         except OSError as msg:
             print('Error starting server: {}'.format(msg))
@@ -416,10 +404,13 @@ class HSMThread(Thread):
         self.debug = debug
         self.skip_parity_check = skip_parity
         self.conn = conn
+        self.ip = ip
+        self.port = port
 
 
     def run(self):
-        self.client_name = ip + ':' + str(port)
+        self.client_name = self.ip + ':' + str(self.port)
+        print(self.info())
         print ('Connected client: {}'.format(self.client_name))
 
         while True:
@@ -459,6 +450,17 @@ class HSMThread(Thread):
                 break
 
         print('Client disconnected: {}'.format(self.client_name))
+
+
+    def info(self):
+        """
+        """
+        dump = ''
+        dump += 'LMK: {}\n'.format(raw2str(self.LMK))
+        dump += 'Firmware version: {}\n'.format(self.firmware_version)
+        if self.header:
+            dump += 'Message header: {}\n'.format(self.header.decode('utf-8'))
+        return dump
 
 
     def _debug_trace(self, data):
