@@ -1,5 +1,6 @@
 
 May 2017
+	0.61 Using conn.shutdown() to close connections
 	0.60 handling client thread disconnection
 	0.59 handling multiple network connections through threads 
 	0.58 Using ternary operator 

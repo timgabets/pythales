@@ -387,19 +387,19 @@ class HSM():
     def run(self):
         self.init_connection()
 
-        threads = []
+        connections = []
         try:
             while True:
                 (conn, (ip, port)) = self.sock.accept()
                 thread = ClientThread(self.firmware_version, self.header, self.LMK, self.debug, self.skip_parity, conn, ip, port) 
                 thread.start() 
-                threads.append(thread) 
+                connections.append(conn) 
 
         except KeyboardInterrupt:
-            print('Keyboard interrupted')
+            print('Keyboard interrupt')
 
-        for t in threads:
-            t.join()
+        for conn in connections:
+            conn.shutdown(socket.SHUT_RDWR)
 
         self.sock.close()
         print('Exit')
@@ -456,10 +456,6 @@ class ClientThread(Thread):
                 print(response.trace())
 
             except TypeError:
-                break
-            
-            except _ as e:
-                print(e)
                 break
 
         print('Client disconnected: {}'.format(self.client_name))
