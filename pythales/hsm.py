@@ -346,9 +346,12 @@ def parse_message(data=None, header=None):
 
     data = data[2 + len(header) : ] if header else data[2:]
     return (data[:2], data[2:])
-        
+
 
 class HSM():
+    '''
+    HSM Factory
+    '''
     def __init__(self, port=None, header=None, key=None, debug=False, skip_parity=None):
         self.firmware_version = '0007-E000'
         self.port = port if port else 1500
@@ -385,11 +388,15 @@ class HSM():
         self.init_connection()
 
         threads = []
-        while True:
-            (conn, (ip, port)) = self.sock.accept()
-            thread = ClientThread(self.firmware_version, self.header, self.LMK, self.debug, self.skip_parity, conn, ip, port) 
-            thread.start() 
-            threads.append(thread) 
+        try:
+            while True:
+                (conn, (ip, port)) = self.sock.accept()
+                thread = ClientThread(self.firmware_version, self.header, self.LMK, self.debug, self.skip_parity, conn, ip, port) 
+                thread.start() 
+                threads.append(thread) 
+
+        except KeyboardInterrupt:
+            print('Keyboard interrupted')
 
         for t in threads:
             t.join()
@@ -416,11 +423,11 @@ class ClientThread(Thread):
 
     def run(self):
         while True:
-            data = self.conn.recv(4096)
-            if len(data):
-                trace('<< {} bytes received from {}: '.format(len(data), self.client_name), data)
-
             try:
+                data = self.conn.recv(4096)
+                if len(data):
+                    trace('<< {} bytes received from {}: '.format(len(data), self.client_name), data)
+
                 command_code, command_data = parse_message(data, header=self.header)
                 if command_code == b'BU':
                     request = BU(command_data)
@@ -440,18 +447,22 @@ class ClientThread(Thread):
                     request = None
 
                 print(request.trace())
-            except ValueError as e:
+
+                response = self.get_response(request)
+                response_data = response.build()
+                self.conn.send(response_data)
+
+                trace('>> {} bytes sent to {}:'.format(len(response_data), self.client_name), response_data)
+                print(response.trace())
+
+            except TypeError:
+                break
+            
+            except _ as e:
                 print(e)
-                continue
+                break
 
-            response = self.get_response(request)
-            response_data = response.build()
-            self.conn.send(response_data)
-
-            trace('>> {} bytes sent to {}:'.format(len(response_data), self.client_name), response_data)
-            print(response.trace())
-
-        print('Loop end')
+        print('Client disconnected: {}'.format(self.client_name))
 
 
     def _debug_trace(self, data):
