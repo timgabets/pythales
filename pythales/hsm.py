@@ -415,7 +415,17 @@ class HSM():
             sys.exit()
 
 
-    def recv(self):
+    def recv(self, client_name=None):
+        """
+        """
+        data = self.conn.recv(4096)
+        if len(data):
+            trace('<< {} bytes received from {}: '.format(len(data), client_name), data)
+            return data
+        else:
+            conn.shutdown(socket.SHUT_RDWR)
+            print('Client disconnected')
+            raise IOError
 
 
     def run(self):
@@ -423,19 +433,16 @@ class HSM():
         print(self.info())
 
         while True:
-            (conn, (ip, port)) = self.sock.accept()
+            (self.conn, (ip, port)) = self.sock.accept()
             client_name = ip + ':' + str(self.port)
             print ('Connected client: {}'.format(client_name))
 
             while True:
-                data = conn.recv(4096)
-                if len(data):
-                    trace('<< {} bytes received from {}: '.format(len(data), client_name), data)
-                else:
-                    conn.shutdown(socket.SHUT_RDWR)
-                    print('Client disconnected')
+                try:
+                    data = self.recv(client_name)
+                except IOError:
                     break
-    
+
                 command_code, command_data = parse_message(data, header=self.header)
                 if command_code == b'BU':
                     request = BU(command_data)
@@ -458,7 +465,7 @@ class HSM():
     
                 response = self.get_response(request)
                 response_data = response.build()
-                conn.send(response_data)
+                self.conn.send(response_data)
     
                 trace('>> {} bytes sent to {}:'.format(len(response_data), client_name), response_data)
                 print(response.trace())
