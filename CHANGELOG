@@ -1,5 +1,6 @@
 
 May 2017
+	0.66 python2 support removed
 	0.65 HSM.send() and HSM.recv()
 	0.64 proper client reconnect
 	0.63 single connection support restored (as multithreaded design was very ugly)
