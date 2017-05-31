@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import HSMThread, OutgoingMessage, BU, CA, CY, DC, EC, HC, parse_message
+from pythales.hsm import HSMThread, OutgoingMessage, DummyMessage, BU, CA, CY, DC, EC, HC, parse_message
 
 class TestParseMessage(unittest.TestCase):
     """
@@ -335,6 +335,43 @@ class TestHSMThread(unittest.TestCase):
         response = self.hsm.generate_key(request)
         self.assertEqual(response.get('Response Code'), b'HD')
         self.assertEqual(response.get('Error Code'), b'00')
+
+
+class TestHSMResponsesMapping(unittest.TestCase):
+    def setUp(self):
+        self.hsm = HSMThread(header='SSSS', skip_parity=True)
+
+    def test_ZZ_response(self):
+        response = self.hsm.get_response(DummyMessage(b''))
+        self.assertEqual(response.get('Response Code'), b'ZZ')
+
+    def test_BU_response(self):
+        data = b'021UA97831862E31CCC36E854FE184EE6453'
+        response = self.hsm.get_response(BU(data))
+        self.assertEqual(response.get('Response Code'), b'BV')
+
+
+    def test_DC_response(self):
+        data = b'UDEADBEEFDEADBEEFDEADBEEFDEADBEEF1234567890ABCDEF1234567890ABCDEF2B687AEFC34B1A890100112345678918723'        
+        response = self.hsm.get_response(DC(data))
+        self.assertEqual(response.get('Response Code'), b'DD')
+
+
+    def test_CA_response(self):
+        data = b'UED4A35D52C9063A1ED4A35D52C9063A1UD39D39EB7C932CF367C97C5B10B2C195127DF366B86AE2D9A70101552000000012'
+        response = self.hsm.get_response(CA(data))
+        self.assertEqual(response.get('Response Code'), b'CB')
+
+    def test_CY_response(self):
+        data = b'U449DF1679F4A4E0695E99D921A253DCB0008990011234567890;1809201'
+        response = self.hsm.get_response(CY(data))
+        self.assertEqual(response.get('Response Code'), b'CZ')
+
+
+    def test_HC_response(self):
+        data = b'U1234567890ABCDEF1234567890ABCDEF;XU1'
+        response = self.hsm.get_response(HC(data))
+        self.assertEqual(response.get('Response Code'), b'HD')
 
 
 if __name__ == '__main__':
