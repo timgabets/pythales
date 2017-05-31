@@ -36,6 +36,7 @@ class DummyMessage():
         """
         return self.command_code
 
+
     def trace(self):
         """
         """

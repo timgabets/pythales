@@ -4,6 +4,27 @@ import unittest
 
 from pythales.hsm import HSMThread, OutgoingMessage, DummyMessage, BU, CA, CY, DC, EC, HC, parse_message
 
+
+class TestBummyMessage(unittest.TestCase):
+    """
+    """
+    def setUp(self):
+        self.message = DummyMessage(b'')
+
+    def test_dummy_message_trace_empty(self):
+        self.assertEqual(self.message.trace(), '')
+    
+    def test_dummy_message_get_non_existent_field(self):
+        self.assertEqual(self.message.get('IDDQD'), None)
+
+    def test_dummy_message_set(self):
+        self.message.set('IDDQD', b'00')
+        self.assertEqual(self.message.get('IDDQD'), b'00')
+
+    def test_dummy_trace(self):
+        self.message.set('IDDQD', b'00')
+        self.assertEqual(self.message.trace(), '\t[IDDQD]: [00]\n')
+
 class TestParseMessage(unittest.TestCase):
     """
     """
