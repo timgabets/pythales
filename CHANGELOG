@@ -1,5 +1,6 @@
 
 May 2017
+	0.64 proper client reconnect
 	0.63 single connection support restored (as multithreaded design was very ugly)
 	0.62 Fixed failing test cases ><
 	0.61 Using conn.shutdown() to close connections

@@ -9,7 +9,6 @@ from collections import OrderedDict
 from Crypto.Cipher import DES, DES3
 from binascii import hexlify, unhexlify
 from pynblock.tools import str2bytes, raw2str, raw2B, B2raw, xor, get_visa_pvv, get_visa_cvv, get_digits_from_string, key_CV, get_clear_pin, check_key_parity, modify_key_parity
-from threading import Thread
 
 
 class DummyMessage():
@@ -394,7 +393,7 @@ class HSM():
 
 """
 
-class HSM(Thread):
+class HSM():
     def __init__(self, header=None, key=None, debug=None, skip_parity=None, port=None):
         self.firmware_version = '0007-E000'        
         self.header = str2bytes(header) if header else b''
@@ -416,21 +415,27 @@ class HSM(Thread):
             sys.exit()
 
 
+    def recv(self):
+
+
     def run(self):
         self.init_connection()
-
-        (conn, (ip, port)) = self.sock.accept()
-        client_name = ip + ':' + str(self.port)
         print(self.info())
 
-        print ('Connected client: {}'.format(client_name))
-
         while True:
-            try:
+            (conn, (ip, port)) = self.sock.accept()
+            client_name = ip + ':' + str(self.port)
+            print ('Connected client: {}'.format(client_name))
+
+            while True:
                 data = conn.recv(4096)
                 if len(data):
                     trace('<< {} bytes received from {}: '.format(len(data), client_name), data)
-
+                else:
+                    conn.shutdown(socket.SHUT_RDWR)
+                    print('Client disconnected')
+                    break
+    
                 command_code, command_data = parse_message(data, header=self.header)
                 if command_code == b'BU':
                     request = BU(command_data)
@@ -448,21 +453,15 @@ class HSM(Thread):
                     request = NC(command_data)
                 else:
                     request = None
-
+    
                 print(request.trace())
-
+    
                 response = self.get_response(request)
                 response_data = response.build()
                 conn.send(response_data)
-
+    
                 trace('>> {} bytes sent to {}:'.format(len(response_data), client_name), response_data)
                 print(response.trace())
-
-            except TypeError:
-                break
-
-        print('Client disconnected: {}'.format(client_name))
-
 
     def info(self):
         """
