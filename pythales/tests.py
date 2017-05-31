@@ -185,7 +185,7 @@ class TestCY(unittest.TestCase):
     def test_service_code_parsed(self):
         self.assertEqual(self.cy.fields['Service Code'], b'201')
 
-class TestEC(unittest.TestCase):
+class TestECAccountNumber(unittest.TestCase):
     """
     00 6a 53 53 53 53 45 43 55 41 45 37 39 44 32 30         .jSSSSECUAE79D20
     33 46 39 36 34 30 41 39 33 43 46 42 41 31 35 35         3F9640A93CFBA155
@@ -214,6 +214,34 @@ class TestEC(unittest.TestCase):
 
     def test_pan_parsed(self):
         self.assertEqual(self.ec.fields['Account Number'], b'407000000010')
+
+    def test_pvki_parsed(self):
+        self.assertEqual(self.ec.fields['PVKI'], b'1')
+
+    def test_pvv_parsed(self):
+        self.assertEqual(self.ec.fields['PVV'], b'2345')
+
+class TestECToken(unittest.TestCase):
+    """
+    """
+    def setUp(self):
+        data = b'UAE79D203F9640A93CFBA155E345953F67336D50C47128D710DF450BCB2C6461BC32F104A6846BD8704xxxxxxxxxxxxzzzzzz12345'
+        self.ec = EC(data)
+
+    def test_zpk_parsed(self):
+        self.assertEqual(self.ec.fields['ZPK'], b'UAE79D203F9640A93CFBA155E345953F6')
+        
+    def test_pvk_pair_parsed(self):
+        self.assertEqual(self.ec.fields['PVK Pair'], b'7336D50C47128D710DF450BCB2C6461B')
+
+    def test_pin_block_parsed(self):
+        self.assertEqual(self.ec.fields['PIN block'], b'C32F104A6846BD87')
+
+    def test_pin_block_format_code_parsed(self):
+        self.assertEqual(self.ec.fields['PIN block format code'], b'04')
+
+    def test_pan_parsed(self):
+        self.assertEqual(self.ec.fields['Token'], b'xxxxxxxxxxxxzzzzzz')
 
     def test_pvki_parsed(self):
         self.assertEqual(self.ec.fields['PVKI'], b'1')
