@@ -66,6 +66,6 @@ Usage:
 	[Response Code]: [CZ]
 	[Error Code   ]: [00]
 
-You may also check examples_ for more sophisticated HSM server implementation with some features like command line options parsing etc.
+You may also check examples_ for more sophisticated HSM server implementation with some features like command line options parsing etc. The application works as a that may simultaneously serve only one connected client.
 
 .. _examples: https://github.com/timgabets/pythales/tree/master/examples
