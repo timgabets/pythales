@@ -423,10 +423,19 @@ class HSM():
             trace('<< {} bytes received from {}: '.format(len(data), client_name), data)
             return data
         else:
-            conn.shutdown(socket.SHUT_RDWR)
-            print('Client disconnected')
+            self.conn.shutdown(socket.SHUT_RDWR)
+            print ('Client disconnected: {}'.format(client_name))
             raise IOError
 
+
+    def send(self, response, client_name=None):
+        """
+        """
+        response_data = response.build()
+        self.conn.send(response_data)
+        trace('>> {} bytes sent to {}:'.format(len(response_data), client_name), response_data)
+        print(response.trace())
+        
 
     def run(self):
         self.init_connection()
@@ -434,7 +443,7 @@ class HSM():
 
         while True:
             (self.conn, (ip, port)) = self.sock.accept()
-            client_name = ip + ':' + str(self.port)
+            client_name = ip + ':' + str(port)
             print ('Connected client: {}'.format(client_name))
 
             while True:
@@ -462,13 +471,9 @@ class HSM():
                     request = None
     
                 print(request.trace())
-    
                 response = self.get_response(request)
-                response_data = response.build()
-                self.conn.send(response_data)
-    
-                trace('>> {} bytes sent to {}:'.format(len(response_data), client_name), response_data)
-                print(response.trace())
+                self.send(response, client_name)
+           
 
     def info(self):
         """

@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='pythales',
-      version='0.64',
+      version='0.65',
       
       description='python thales hsm simulator',
       long_description=open('README.rst').read(),
