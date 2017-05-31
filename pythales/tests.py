@@ -308,6 +308,22 @@ class TestHSMThread(unittest.TestCase):
         self.assertEqual(response.get('Response Code'), b'DD')
         self.assertEqual(response.get('Error Code'), b'00')
 
+    """
+    verify_cvv()
+    """
+    def test_verify_cvv_proper_response_code(self):
+        """
+        00 42 53 53 53 53 43 59 55 31 43 31 45 42 31 30         .BSSSSCYU1C1EB10
+        39 30 36 38 31 43 43 39 45 36 30 30 33 45 30 35         90681CC9E6003E05
+        32 31 37 43 37 30 37 37 45 36 34 30 34 31 37 34         217C7077E6404174
+        30 37 30 30 30 30 30 30 30 31 30 34 3b 31 37 31         070000000104;171
+        32 32 30 31                                             2201
+        """
+        data = b'U1C1EB1090681CC9E6003E05217C7077E6404174070000000104;1712201'
+        request = CY(data)
+        response = self.hsm.verify_cvv(request)
+        self.assertEqual(response.get('Response Code'), b'CZ')
+
 
 if __name__ == '__main__':
     unittest.main()

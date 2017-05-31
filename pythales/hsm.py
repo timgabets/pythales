@@ -353,7 +353,6 @@ class HSM():
     HSM Factory
     '''
     def __init__(self, port=None, header=None, key=None, debug=False, skip_parity=None):
-        self.firmware_version = '0007-E000'
         self.port = port if port else 1500
         self.header = str2bytes(header) if header else b''
         self.LMK = key
@@ -379,7 +378,7 @@ class HSM():
         try:
             while True:
                 (conn, (ip, port)) = self.sock.accept()
-                thread = HSMThread(self.firmware_version, self.header, self.LMK, self.debug, self.skip_parity, conn, ip, port) 
+                thread = HSMThread(self.header, self.LMK, self.debug, self.skip_parity, conn, ip, port) 
                 thread.start() 
                 connections.append(conn) 
 
@@ -394,10 +393,10 @@ class HSM():
 
 
 class HSMThread(Thread):
-    def __init__(self, firmware_version=None, header=None, key=None, debug=None, skip_parity=None, conn=None, ip=None, port=None):
+    def __init__(self, header=None, key=None, debug=None, skip_parity=None, conn=None, ip=None, port=None):
         Thread.__init__(self)
         
-        self.firmware_version = firmware_version
+        self.firmware_version = '0007-E000'
         self.header = header
         self.LMK = unhexlify(key) if key else unhexlify('deafbeedeafbeedeafbeedeafbeedeaf')
         self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
