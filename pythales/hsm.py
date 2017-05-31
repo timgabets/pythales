@@ -348,7 +348,7 @@ def parse_message(data=None, header=None):
     data = data[2 + len(header) : ] if header else data[2:]
     return (data[:2], data[2:])
 
-
+"""
 class HSM():
     '''
     HSM Factory
@@ -392,32 +392,44 @@ class HSM():
         self.sock.close()
         print('Exit')
 
+"""
 
-class HSMThread(Thread):
-    def __init__(self, header=None, key=None, debug=None, skip_parity=None, conn=None, ip=None, port=None):
-        Thread.__init__(self)
-        
-        self.firmware_version = '0007-E000'
-        self.header = header
+class HSM(Thread):
+    def __init__(self, header=None, key=None, debug=None, skip_parity=None, port=None):
+        self.firmware_version = '0007-E000'        
+        self.header = str2bytes(header) if header else b''
         self.LMK = unhexlify(key) if key else unhexlify('deafbeedeafbeedeafbeedeafbeedeaf')
         self.cipher = DES3.new(self.LMK, DES3.MODE_ECB)
         self.debug = debug
         self.skip_parity_check = skip_parity
-        self.conn = conn
-        self.ip = ip
-        self.port = port
+        self.port = port if port else 1500
+
+
+    def init_connection(self):
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.bind(('', self.port))   
+            self.sock.listen(5)
+            print('Listening on port {}'.format(self.port))
+        except OSError as msg:
+            print('Error starting server: {}'.format(msg))
+            sys.exit()
 
 
     def run(self):
-        self.client_name = self.ip + ':' + str(self.port)
+        self.init_connection()
+
+        (conn, (ip, port)) = self.sock.accept()
+        client_name = ip + ':' + str(self.port)
         print(self.info())
-        print ('Connected client: {}'.format(self.client_name))
+
+        print ('Connected client: {}'.format(client_name))
 
         while True:
             try:
-                data = self.conn.recv(4096)
+                data = conn.recv(4096)
                 if len(data):
-                    trace('<< {} bytes received from {}: '.format(len(data), self.client_name), data)
+                    trace('<< {} bytes received from {}: '.format(len(data), client_name), data)
 
                 command_code, command_data = parse_message(data, header=self.header)
                 if command_code == b'BU':
@@ -441,15 +453,15 @@ class HSMThread(Thread):
 
                 response = self.get_response(request)
                 response_data = response.build()
-                self.conn.send(response_data)
+                conn.send(response_data)
 
-                trace('>> {} bytes sent to {}:'.format(len(response_data), self.client_name), response_data)
+                trace('>> {} bytes sent to {}:'.format(len(response_data), client_name), response_data)
                 print(response.trace())
 
             except TypeError:
                 break
 
-        print('Client disconnected: {}'.format(self.client_name))
+        print('Client disconnected: {}'.format(client_name))
 
 
     def info(self):
