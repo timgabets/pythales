@@ -324,6 +324,18 @@ class TestHSMThread(unittest.TestCase):
         response = self.hsm.verify_cvv(request)
         self.assertEqual(response.get('Response Code'), b'CZ')
 
+    """
+    generate_key()
+    """
+    def test_generate_key_proper_response_code(self):
+        """
+        """
+        data = b'U1234567890ABCDEF1234567890ABCDEF;XU1'
+        request = HC(data)
+        response = self.hsm.generate_key(request)
+        self.assertEqual(response.get('Response Code'), b'HD')
+        self.assertEqual(response.get('Error Code'), b'00')
+
 
 if __name__ == '__main__':
     unittest.main()
