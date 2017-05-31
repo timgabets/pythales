@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import HSMThread, OutgoingMessage, DummyMessage, BU, CA, CY, DC, EC, HC, parse_message
+from pythales.hsm import HSMThread, OutgoingMessage, DummyMessage, BU, CA, CY, DC, EC, HC, NC, parse_message
 
 
 class TestBummyMessage(unittest.TestCase):
@@ -265,6 +265,7 @@ class TestHC(unittest.TestCase):
     def test_current_key_parsed(self):
         self.assertEqual(self.hc.fields['Current Key'], b'U1234567890ABCDEF1234567890ABCDEF')
 
+
 class TestBU(unittest.TestCase):
     """
     16:53:16.560494 << 44 bytes received from 192.168.56.101:42364: 
@@ -422,6 +423,11 @@ class TestHSMResponsesMapping(unittest.TestCase):
         response = self.hsm.get_response(HC(data))
         self.assertEqual(response.get('Response Code'), b'HD')
 
+
+    def test_NC_response(self):
+        response = self.hsm.get_response(NC(b''))
+        self.assertEqual(response.get('Response Code'), b'ND')
+        self.assertEqual(response.get('Error Code'), b'00')
 
 if __name__ == '__main__':
     unittest.main()
