@@ -14,6 +14,7 @@ from pynblock.tools import str2bytes, raw2str, raw2B, B2raw, xor, get_visa_pvv, 
 class DummyMessage():
     def __init__(self, data):
         self.command_code = None
+        self.description = None
         self.fields = OrderedDict()
 
     def get(self, field):
@@ -48,6 +49,8 @@ class DummyMessage():
                 width = len(key)
 
         dump = ''
+        if self.description:
+            dump = dump + '\t[' + 'Command Description'.ljust(width, ' ') + ']: [' + self.description + ']\n'
         for key, value in self.fields.items():
             dump = dump + '\t[' + key.ljust(width, ' ') + ']: [' + value.decode('utf-8') + ']\n'
         return dump
@@ -300,6 +303,7 @@ class NC(DummyMessage):
 class OutgoingMessage(DummyMessage):
     def __init__(self, data=None, header=None):
         self.header = header
+        self.description = None
         self.fields = OrderedDict()
 
 
@@ -347,51 +351,6 @@ def parse_message(data=None, header=None):
     data = data[2 + len(header) : ] if header else data[2:]
     return (data[:2], data[2:])
 
-"""
-class HSM():
-    '''
-    HSM Factory
-    '''
-    def __init__(self, port=None, header=None, key=None, debug=False, skip_parity=None):
-        self.port = port if port else 1500
-        self.header = str2bytes(header) if header else b''
-        self.LMK = key
-        self.debug = debug
-        self.skip_parity = skip_parity
-
-
-    def init_connection(self):
-        try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.bind(('', self.port))   
-            self.sock.listen(5)
-            print('Listening on port {}'.format(self.port))
-        except OSError as msg:
-            print('Error starting server: {}'.format(msg))
-            sys.exit()
-        
-
-    def run(self):
-        self.init_connection()
-
-        connections = []
-        try:
-            while True:
-                (conn, (ip, port)) = self.sock.accept()
-                thread = HSMThread(self.header, self.LMK, self.debug, self.skip_parity, conn, ip, port) 
-                thread.start() 
-                connections.append(conn) 
-
-        except KeyboardInterrupt:
-            print('Keyboard interrupt')
-
-        for conn in connections:
-            conn.shutdown(socket.SHUT_RDWR)
-
-        self.sock.close()
-        print('Exit')
-
-"""
 
 class HSM():
     def __init__(self, header=None, key=None, debug=None, skip_parity=None, port=None):

@@ -28,6 +28,9 @@ class TestBummyMessage(unittest.TestCase):
 class TestParseMessage(unittest.TestCase):
     """
     """
+    def test_parse_message_none(self):
+        self.assertEqual(parse_message(None), None)
+
     def test_get_length_incorrect(self):
         with self.assertRaisesRegex(ValueError, 'Expected message of length 6 but actual received message length is 2'):
             parse_message(b'\x00\x0600')
