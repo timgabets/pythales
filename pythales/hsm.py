@@ -56,6 +56,29 @@ class DummyMessage():
         return dump
 
 
+class A0(DummyMessage):
+    def __init__(self, data):
+        self.data = data
+        self.command_code = b'A0'
+        self.description = 'Generate a Key'
+        self.fields = OrderedDict()
+
+        # Mode - Indicates the operation of the function
+        field_size = 1
+        self.fields['Mode'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Key type
+        field_size = 3
+        self.fields['Key Type'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Key scheme
+        field_size = 1
+        self.fields['Key Scheme'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+
 class BU(DummyMessage):
     def __init__(self, data):
         self.data = data
@@ -412,7 +435,9 @@ class HSM():
                     break
 
                 command_code, command_data = parse_message(data, header=self.header)
-                if command_code == b'BU':
+                if command_code == b'A0':
+                    request = A0(command_data)
+                elif command_code == b'BU':
                     request = BU(command_data)
                 elif command_code == b'CA':
                     request = CA(command_data)
@@ -651,12 +676,29 @@ class HSM():
         response.set('Key Check Value', key_CV(key, 16))
         return response
 
+    def generate_key_a0(self, request):
+        """
+        Get response to A0 command
+        """
+        response = OutgoingMessage(header=self.header)
+        response.set_response_code('A1')
+        response.set_error_code('00')
+
+        new_clear_key = modify_key_parity(bytes(os.urandom(16)))
+        self._debug_trace('Generated key: {}'.format(raw2str(new_clear_key)))
+        new_key_under_lmk = self.cipher.encrypt(new_clear_key)
+        response.set('Key under LMK', b'U' + raw2B(new_key_under_lmk))
+
+        return response
+
 
     def get_response(self, request):
         """
         """
         rqst_command_code = request.get_command_code()
-        if rqst_command_code == b'BU':
+        if rqst_command_code == b'A0':
+            return self.generate_key_a0(request)
+        elif rqst_command_code == b'BU':
             return self.get_key_check_value(request)
         elif rqst_command_code == b'NC':
             return self.get_diagnostics_data()

@@ -2,7 +2,7 @@
 
 import unittest
 
-from pythales.hsm import HSM, OutgoingMessage, DummyMessage, BU, CA, CY, DC, EC, HC, NC, parse_message
+from pythales.hsm import HSM, OutgoingMessage, DummyMessage, A0, BU, CA, CY, DC, EC, HC, NC, parse_message
 
 
 class TestBummyMessage(unittest.TestCase):
@@ -387,6 +387,18 @@ class TestHSMThread(unittest.TestCase):
         request = HC(data)
         response = self.hsm.generate_key(request)
         self.assertEqual(response.get('Response Code'), b'HD')
+        self.assertEqual(response.get('Error Code'), b'00')
+
+    """
+    generate_key_a0()
+    """
+    def test_generate_key_a0_proper_response_code(self):
+        """
+        """
+        data = b'0002U'
+        request = A0(data)
+        response = self.hsm.generate_key_a0(request)
+        self.assertEqual(response.get('Response Code'), b'A1')
         self.assertEqual(response.get('Error Code'), b'00')
 
 
