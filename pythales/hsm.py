@@ -78,6 +78,22 @@ class A0(DummyMessage):
         self.fields['Key Scheme'] = self.data[0:field_size]
         self.data = self.data[field_size:]
 
+        if self.fields['Mode'] == b'1':
+            # Delimiter
+            field_size = 1
+            if self.data[0:field_size] == b';':
+                self.data = self.data[field_size:]
+
+                field_size = 1
+                self.fields['ZMK/TMK Flag'] = self.data[0:field_size]
+                self.data = self.data[field_size:]
+
+            # ZMK (or TMK)
+            if self.data[0:1] in [b'U']:
+                field_size = 33
+                self.fields['ZMK/TMK'] = self.data[0:field_size]
+                self.data = self.data[field_size:]
+
 
 class BU(DummyMessage):
     def __init__(self, data):
@@ -688,6 +704,15 @@ class HSM():
         self._debug_trace('Generated key: {}'.format(raw2str(new_clear_key)))
         new_key_under_lmk = self.cipher.encrypt(new_clear_key)
         response.set('Key under LMK', b'U' + raw2B(new_key_under_lmk))
+
+        zmk_under_lmk = request.get('ZMK/TMK')[1:33]
+        if zmk_under_lmk:
+            clear_zmk = self.cipher.decrypt(B2raw(zmk_under_lmk))
+            zmk_key_cipher = DES3.new(clear_zmk, DES3.MODE_ECB)
+            new_key_under_zmk = zmk_key_cipher.encrypt(new_clear_key)
+
+            response.set('Key under ZMK', b'U' + raw2B(new_key_under_zmk))
+            response.set('Key Check Value', key_CV(raw2B(new_clear_key), 6))
 
         return response
 

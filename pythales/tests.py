@@ -82,6 +82,33 @@ class TestMessageGet(unittest.TestCase):
     def test_get_command_code(self):
         self.assertEqual(self.m.get('Command Code'), b'NG')
 
+class TestA0(unittest.TestCase):
+    """
+    DC command received:
+    00 2f 53 53 53 53 41 30 31 37 30 44 55 3b 31 55         ./SSSSA0170DU;1U
+    34 45 45 32 34 39 42 37 43 30 44 38 34 32 39 36         4EE249B7C0D84296
+    30 37 32 38 44 46 31 42 32 45 43 38 37 30 31 45         0728DF1B2EC8701E
+    58                                                      X
+    """
+    def setUp(self):
+        data = b'170DU;1U4EE249B7C0D842960728DF1B2EC8701EX'
+        self.a0 = A0(data)
+
+    def test_mode_parsed(self):
+        self.assertEqual(self.a0.fields['Mode'], b'1')
+
+    def test_key_type_parsed(self):
+        self.assertEqual(self.a0.fields['Key Type'], b'70D')
+
+    def test_key_scheme_parsed(self):
+        self.assertEqual(self.a0.fields['Key Scheme'], b'U')
+    
+    def test_zmk_tpk_flag_parsed(self):
+        self.assertEqual(self.a0.fields['ZMK/TMK Flag'], b'1')
+
+    def test_zmk_tpk_flag_parsed(self):
+        self.assertEqual(self.a0.fields['ZMK/TMK'], b'U4EE249B7C0D842960728DF1B2EC8701E')
+
 
 class TestDC(unittest.TestCase):
     """
@@ -400,6 +427,18 @@ class TestHSMThread(unittest.TestCase):
         response = self.hsm.generate_key_a0(request)
         self.assertEqual(response.get('Response Code'), b'A1')
         self.assertEqual(response.get('Error Code'), b'00')
+
+    def test_generate_key_a0_proper_response_code(self):
+        """
+        """
+        data = b'170DU;1U4EE249B7C0D842960728DF1B2EC8701EX'
+        request = A0(data)
+        response = self.hsm.generate_key_a0(request)
+        self.assertEqual(response.get('Response Code'), b'A1')
+        self.assertEqual(response.get('Error Code'), b'00')
+        self.assertEqual(response.get('Key under ZMK')[0], 85) # b'U'
+        self.assertEqual(len(response.get('Key under ZMK')), 33)
+        self.assertEqual(len(response.get('Key Check Value')), 6)
 
 
 class TestHSMResponsesMapping(unittest.TestCase):
