@@ -2,10 +2,10 @@
 
 import unittest
 
-from pythales.hsm import HSM, OutgoingMessage, DummyMessage, A0, BU, CA, CY, DC, EC, HC, NC, parse_message
+from pythales.hsm import HSM, OutgoingMessage, DummyMessage, A0, BU, CA, CW, CY, DC, EC, HC, NC, parse_message
 
 
-class TestBummyMessage(unittest.TestCase):
+class TestDummyMessage(unittest.TestCase):
     """
     """
     def setUp(self):
@@ -185,6 +185,31 @@ class TestCA(unittest.TestCase):
 
     def test_account_number_parsed(self):
         self.assertEqual(self.ca.fields['Account Number'], b'552000000012')
+
+
+class TestCW(unittest.TestCase):
+    """
+    00 3f 53 53 53 53 43 57 55 31 43 31 45 42 31 30         .?SSSSCWU1C1EB10
+    39 30 36 38 31 43 43 39 45 36 30 30 33 45 30 35         90681CC9E6003E05
+    32 31 37 43 37 30 37 37 45 34 35 37 35 32 37 32         217C7077E4575272
+    32 32 32 35 36 37 31 32 32 3b 32 30 31 30 30 30         222567122;201000
+    30                                                      0
+    """
+    def setUp(self):
+        data = b'U1C1EB1090681CC9E6003E05217C7077E4575272222567122;2010000'
+        self.cy = CW(data)
+
+    def test_cvk_parsed(self):
+        self.assertEqual(self.cy.fields['CVK'], b'U1C1EB1090681CC9E6003E05217C7077E')
+
+    def test_account_number_parsed(self):
+        self.assertEqual(self.cy.fields['Primary Account Number'], b'4575272222567122')
+
+    def test_expiry_date_parsed(self):
+        self.assertEqual(self.cy.fields['Expiration Date'], b'2010')
+
+    def test_service_code_parsed(self):
+        self.assertEqual(self.cy.fields['Service Code'], b'000')
 
 
 class TestCY(unittest.TestCase):
@@ -403,6 +428,23 @@ class TestHSMThread(unittest.TestCase):
         request = CY(data)
         response = self.hsm.verify_cvv(request)
         self.assertEqual(response.get('Response Code'), b'CZ')
+
+        """
+    generate_cvv()
+    """
+    def test_generate_cvv_proper_response_code(self):
+        """
+        00 3f 53 53 53 53 43 57 55 31 43 31 45 42 31 30         .?SSSSCWU1C1EB10
+        39 30 36 38 31 43 43 39 45 36 30 30 33 45 30 35         90681CC9E6003E05
+        32 31 37 43 37 30 37 37 45 34 35 37 35 32 37 32         217C7077E4575272
+        32 32 32 35 36 37 31 32 32 3b 32 30 31 30 30 30         222567122;201000
+        30                                                      0
+        """
+        data = b'U1C1EB1090681CC9E6003E05217C7077E4575272222567122;2010000'
+        request = CW(data)
+        response = self.hsm.generate_cvv(request)
+        self.assertEqual(response.get('Response Code'), b'CX')
+        self.assertEqual(response.get('CVV'), b'670')
 
     """
     generate_key()

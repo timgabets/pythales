@@ -209,6 +209,40 @@ class CA(DummyMessage):
         self.data = self.data[field_size:]
 
 
+class CW(DummyMessage):
+    def __init__(self, data):
+        self.data = data
+        self.command_code = b'CW'
+        self.description = 'Generate a Card Verification Code'
+        self.fields = OrderedDict()
+
+        # CVK
+        if self.data[0:1] in [b'U', b'T', b'S']:
+            field_size = 33
+            self.fields['CVK'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+
+        # Primary Account Number
+        delimiter_index = 0
+        for byte in self.data:
+            if byte == 59:  # b';'
+                break
+            delimiter_index += 1
+
+        self.fields['Primary Account Number'] = self.data[0:delimiter_index]
+        self.data = self.data[delimiter_index + 1:]
+
+        # Expiration Date
+        field_size = 4
+        self.fields['Expiration Date'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+        # Service Code
+        field_size = 3
+        self.fields['Service Code'] = self.data[0:field_size]
+        self.data = self.data[field_size:]
+
+
 class CY(DummyMessage):
     def __init__(self, data):
         self.data = data
@@ -457,6 +491,8 @@ class HSM():
                     request = BU(command_data)
                 elif command_code == b'CA':
                     request = CA(command_data)
+                elif command_code == b'CW':
+                    request = CW(command_data)
                 elif command_code == b'CY':
                     request = CY(command_data)
                 elif command_code == b'DC':
@@ -468,6 +504,7 @@ class HSM():
                 elif command_code == b'NC':
                     request = NC(command_data)
                 else:
+                    print('\nUnsupported command: ' + str(command_code, 'utf-8'));
                     request = None
     
                 print(request.trace())
@@ -505,6 +542,27 @@ class HSM():
         cipher = DES3.new(clear_terminal_key, DES3.MODE_ECB)
         decrypted_pinblock = cipher.decrypt(B2raw(encrypted_pinblock))
         return raw2B(decrypted_pinblock)
+
+
+    def generate_cvv(self, request):
+        """
+        Get response to CW command
+        """
+        response =  OutgoingMessage(data=None, header=self.header)
+        response.set_response_code('CX')
+
+        if not self.check_key_parity(request.get('CVK')):
+            self._debug_trace('CVK parity error')
+            response.set_error_code('10')
+            return response
+
+        CVK = request.get('CVK')
+        if CVK[0:1] in [b'U']:
+            CVK = CVK[1:]
+        cvv = get_visa_cvv(request.get('Primary Account Number'), request.get('Expiration Date'), request.get('Service Code'), CVK)
+
+        response.set('CVV', str2bytes(cvv))
+        return response     
 
 
     def verify_cvv(self, request):
@@ -731,6 +789,8 @@ class HSM():
             return self.verify_pin(request)
         elif rqst_command_code == b'CA':
             return self.translate_pinblock(request)
+        elif rqst_command_code == b'CW':
+            return self.generate_cvv(request)
         elif rqst_command_code == b'CY':
             return self.verify_cvv(request)
         elif rqst_command_code == b'HC':
