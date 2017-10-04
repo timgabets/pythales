@@ -1,4 +1,5 @@
 October 2017
+	0.71 Fixed empty error code returned in CX response
 	0.70 CW (Generate a Card Verification Code) command support
 
 August 2017

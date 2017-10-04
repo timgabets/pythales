@@ -561,6 +561,7 @@ class HSM():
             CVK = CVK[1:]
         cvv = get_visa_cvv(request.get('Primary Account Number'), request.get('Expiration Date'), request.get('Service Code'), CVK)
 
+        response.set_error_code('00')
         response.set('CVV', str2bytes(cvv))
         return response     
 

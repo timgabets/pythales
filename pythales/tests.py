@@ -444,6 +444,7 @@ class TestHSMThread(unittest.TestCase):
         request = CW(data)
         response = self.hsm.generate_cvv(request)
         self.assertEqual(response.get('Response Code'), b'CX')
+        self.assertEqual(response.get('Error Code'), b'00')
         self.assertEqual(response.get('CVV'), b'670')
 
     """
