@@ -426,7 +426,7 @@ def parse_message(data=None, header=None):
 
 
 class HSM():
-    def __init__(self, header=None, key=None, debug=None, skip_parity=None, port=None):
+    def __init__(self, header=None, key=None, debug=None, skip_parity=None, port=None, approve_all=None):
         self.firmware_version = '0007-E000'        
         self.header = str2bytes(header) if header else b''
         self.LMK = unhexlify(key) if key else unhexlify('deafbeedeafbeedeafbeedeafbeedeaf')
@@ -434,6 +434,9 @@ class HSM():
         self.debug = debug
         self.skip_parity_check = skip_parity
         self.port = port if port else 1500
+        self.approve_all = approve_all
+        if(self.approve_all)
+            print('\n\n\tHSM is forced to approve all the requests!\n')
 
 
     def init_connection(self):
@@ -553,7 +556,11 @@ class HSM():
 
         if not self.check_key_parity(request.get('CVK')):
             self._debug_trace('CVK parity error')
-            response.set_error_code('10')
+            if self.approve_all:
+                self._debug_trace('Forced approval as --approve-all option set')
+                response.set_error_code('00')
+            else:
+                response.set_error_code('10')
             return response
 
         CVK = request.get('CVK')
@@ -587,7 +594,11 @@ class HSM():
             response.set_error_code('00')
         else:
             self._debug_trace('CVV mismatch: {} != {}'.format(cvv, request.get('CVV').decode('utf-8')))
-            response.set_error_code('01')
+            if self.approve_all:
+                self._debug_trace('Forced approval as --approve-all option set')
+                response.set_error_code('00')
+            else:
+                response.set_error_code('01')
             
         return response
 
@@ -646,17 +657,29 @@ class HSM():
 
         if not self.check_key_parity(request.get(key_type)):
             self._debug_trace(key_type + ' parity error')
-            response.set_error_code('10')
+            if self.approve_all:
+                self._debug_trace('Forced approval as --approve-all option set')
+                response.set_error_code('00')
+            else:
+                response.set_error_code('10')
             return response
 
         if not self.check_key_parity(request.get('PVK Pair')):
             self._debug_trace('PVK parity error')
-            response.set_error_code('11')
+            if self.approve_all:
+                self._debug_trace('Forced approval as --approve-all option set')
+                response.set_error_code('00')
+            else:
+                response.set_error_code('11')
             return response     
 
         if len(request.get('PVK Pair')) != 32:
             self._debug_trace('PVK not double length')
-            response.set_error_code('27')
+            if self.approve_all:
+                self._debug_trace('Forced approval as --approve-all option set')
+                response.set_error_code('00')
+            else:
+                response.set_error_code('27')
             return response
 
         decrypted_pinblock = self._decrypt_pinblock(request.get('PIN block'), request.get(key_type))
@@ -669,13 +692,21 @@ class HSM():
                 response.set_error_code('00')
             else:
                 self._debug_trace('PVV mismatch: {} != {}'.format(pvv.decode('utf-8'), request.get('PVV').decode('utf-8')))
-                response.set_error_code('01')
+                if self.approve_all:
+                    self._debug_trace('Forced approval as --approve-all option set')
+                    response.set_error_code('00')
+                else:
+                    response.set_error_code('01')
 
             return response
 
         except ValueError as err:
             self._debug_trace(err)
-            response.set_error_code('01')
+            if self.approve_all:
+                self._debug_trace('Forced approval as --approve-all option set')
+                response.set_error_code('00')
+            else:
+                response.set_error_code('01')
             return response
 
 
@@ -696,13 +727,21 @@ class HSM():
         # Source key parity check
         if not self.check_key_parity(request.get('TPK')):
             self._debug_trace('Source TPK parity error')
-            response.set_error_code('10')
+            if self.approve_all:
+                self._debug_trace('Forced approval as --approve-all option set')
+                response.set_error_code('00')
+            else:
+                response.set_error_code('10')
             return response
 
         # Destination key parity check
         if not self.check_key_parity(request.get('Destination Key')):
             self._debug_trace('Destination ZPK parity error')
-            response.set_error_code('11')
+            if self.approve_all:
+                self._debug_trace('Forced approval as --approve-all option set')
+                response.set_error_code('00')
+            else:
+                response.set_error_code('11')
             return response
 
         decrypted_pinblock = self._decrypt_pinblock(request.get('Source PIN block'), request.get('TPK'))
