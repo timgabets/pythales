@@ -1,7 +1,7 @@
 pythales
 ========
 
-A primitive implementation of Thales HSM (hardware security module) simulator. Only the basic (the most popular) HSM commands are implemented:
+A primitive implementation of Thales [HSM](https://en.wikipedia.org/wiki/Hardware_security_module) (hardware security module) simulator. Only the basic (the most popular) HSM commands are implemented:
 
 - A0 - Generate a Key
 - BU - Generate a Key check value 
