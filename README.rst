@@ -9,6 +9,7 @@ A primitive implementation of Thales HSM_ (hardware security module) simulator. 
 - CY - Verify CVV/CSC
 - DC - Verify PIN
 - EC - Verify an Interchange PIN using ABA PVV method
+- FA - Translate a ZPK from ZMK to LMK
 - HC - Generate a TMK, TPK or PVK
 - NC - Diagnostics information
 

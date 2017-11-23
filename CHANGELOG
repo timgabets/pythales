@@ -1,3 +1,6 @@
+November 2017
+	0.73 FA command support (translate a ZPK from ZMK to LMK)
+
 October 2017
 	0.72 Forced approval option (-a or --approve-all)
 	0.71 Fixed empty error code returned in CX response
