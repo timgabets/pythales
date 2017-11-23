@@ -346,7 +346,7 @@ class FA(DummyMessage):
             self.data = self.data[field_size:]
 
         # ZPK
-        if self.data[0:1] in [b'U', b'T']:
+        if self.data[0:1] in [b'U', b'T', b'X']:
             field_size = 33            
             self.fields['ZPK'] = self.data[0:field_size]
             self.data = self.data[field_size:]
@@ -455,7 +455,7 @@ class HSM():
         self.skip_parity_check = skip_parity
         self.port = port if port else 1500
         self.approve_all = approve_all
-        if(self.approve_all)
+        if self.approve_all:
             print('\n\n\tHSM is forced to approve all the requests!\n')
 
 
@@ -843,6 +843,7 @@ class HSM():
         """
         response = OutgoingMessage(header=self.header)
         response.set_response_code('FB')
+        response.set_error_code('00')
 
         zmk_under_lmk = request.get('ZMK')[1:33]
         if zmk_under_lmk:
@@ -850,9 +851,25 @@ class HSM():
             self._debug_trace('Clear ZMK: {}'.format(raw2str(clear_zmk)))
 
             zmk_key_cipher = DES3.new(clear_zmk, DES3.MODE_ECB)
-            new_key_under_zmk = zmk_key_cipher.encrypt(new_clear_key)
 
-        response.set_error_code('01')
+            zpk_under_zmk = request.get('ZPK')[1:33]
+            if zpk_under_zmk:
+                clear_zpk = zmk_key_cipher.decrypt(B2raw(zpk_under_zmk))
+                self._debug_trace('Clear ZPK: {}'.format(raw2str(clear_zpk)))
+                
+                zpk_under_lmk = self.cipher.encrypt(clear_zpk)
+
+                response.set('ZPK under LMK', b'U' + raw2B(zpk_under_lmk))
+                response.set('Key Check Value', key_CV(raw2B(zpk_under_lmk), 6))
+                response.set_error_code('00')
+
+            else:
+                self._debug_trace('ERROR: Invalid ZPK')
+                response.set_error_code('01')
+
+        else:
+            self._debug_trace('ERROR: Invalid ZMK')
+            response.set_error_code('01')
 
         return response
 
