@@ -332,6 +332,26 @@ class EC(DummyMessage):
         self.data = self.data[field_size:] 
 
 
+class FA(DummyMessage):
+    def __init__(self, data):
+        self.data = data
+        self.command_code = b'FA'
+        self.description = 'Translate a ZPK from ZMK to LMK'
+        self.fields = OrderedDict()
+
+        # ZMK
+        if self.data[0:1] in [b'U', b'T']:
+            field_size = 33            
+            self.fields['ZMK'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+
+        # ZPK
+        if self.data[0:1] in [b'U', b'T']:
+            field_size = 33            
+            self.fields['ZPK'] = self.data[0:field_size]
+            self.data = self.data[field_size:]
+            
+
 class HC(DummyMessage):
     """
     Generate a TMK, TPK or PVK
@@ -502,6 +522,8 @@ class HSM():
                     request = DC(command_data)
                 elif command_code == b'EC':
                     request = EC(command_data)
+                elif command_code == b'FA':
+                    request = FA(command_data)
                 elif command_code == b'HC':
                     request = HC(command_data)
                 elif command_code == b'NC':
@@ -815,6 +837,26 @@ class HSM():
         return response
 
 
+    def translate_zpk(self, request):
+        """
+        Get response to FA command
+        """
+        response = OutgoingMessage(header=self.header)
+        response.set_response_code('FB')
+
+        zmk_under_lmk = request.get('ZMK')[1:33]
+        if zmk_under_lmk:
+            clear_zmk = self.cipher.decrypt(B2raw(zmk_under_lmk))
+            self._debug_trace('Clear ZMK: {}'.format(raw2str(clear_zmk)))
+
+            zmk_key_cipher = DES3.new(clear_zmk, DES3.MODE_ECB)
+            new_key_under_zmk = zmk_key_cipher.encrypt(new_clear_key)
+
+        response.set_error_code('01')
+
+        return response
+
+
     def get_response(self, request):
         """
         """
@@ -833,6 +875,8 @@ class HSM():
             return self.generate_cvv(request)
         elif rqst_command_code == b'CY':
             return self.verify_cvv(request)
+        elif rqst_command_code == b'FA':
+            return self.translate_zpk(request)
         elif rqst_command_code == b'HC':
             return self.generate_key(request)
         else:
