@@ -844,7 +844,15 @@ class HSM():
         response = OutgoingMessage(header=self.header)
         response.set_response_code('FB')
 
-        response.set_error_code('00')
+        zmk_under_lmk = request.get('ZMK')[1:33]
+        if zmk_under_lmk:
+            clear_zmk = self.cipher.decrypt(B2raw(zmk_under_lmk))
+            self._debug_trace('Clear ZMK: {}'.format(raw2str(clear_zmk)))
+
+            zmk_key_cipher = DES3.new(clear_zmk, DES3.MODE_ECB)
+            new_key_under_zmk = zmk_key_cipher.encrypt(new_clear_key)
+
+        response.set_error_code('01')
 
         return response
 
