@@ -27,7 +27,7 @@ if __name__ == '__main__':
     skip_parity = None
     approve_all = None
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'h:p:k:dsa', ['header=', 'port=', 'key=', 'debug', 'skip-parity', 'approve-all'])
+    optlist, args = getopt.getopt(sys.argv[1:], 'h:p:k:dsa', ['header=', 'port=', 'key=', 'debug', 'skip-parity', 'approve-all', 'help'])
     for opt, arg in optlist:
         if opt in ('-h', '--header'):
             header = arg
@@ -45,7 +45,7 @@ if __name__ == '__main__':
             skip_parity = True
         elif opt in ('-a', '--approve-all'):
             approve_all = True
-        else:
+        elif opt in ( '--help'):
             show_help(sys.argv[0])
             sys.exit()
 

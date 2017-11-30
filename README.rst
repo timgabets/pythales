@@ -14,6 +14,7 @@ A primitive implementation of Thales HSM_ (hardware security module) simulator. 
 - NC - Diagnostics information
 
 Installation
+
 Install git and python3:
  # apt-get install git python3 python3-pip
 
