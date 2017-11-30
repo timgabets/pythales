@@ -15,23 +15,23 @@ A primitive implementation of Thales HSM_ (hardware security module) simulator. 
 
 Installation
 Install git and python3:
- # apt-get install git python3 python3-pip
+ apt-get install git python3 python3-pip
 
 Setup virtual environment for python3 (check the Manual_):
- # mkvirtualenv pyenv -p /usr/bin/python3
- # workon pyenv
+ mkvirtualenv pyenv -p /usr/bin/python3
+ workon pyenv
 
 Check out the code and install requirements:
- # git clone https://github.com/timgabets/pythales
- # cd pythales
- # workon pyenv
- # pip3 install -r requirements.txt
+ git clone https://github.com/timgabets/pythales
+ cd pythales
+ workon pyenv
+ pip3 install -r requirements.txt
  
 
 Run:
- > cd examples/
- > ./hsm_server.py --help
- > ./hsm_server.py -h SSSS -d --skip-parity
+ cd examples/
+ ./hsm_server.py --help
+ ./hsm_server.py -h SSSS -d --skip-parity
 
 Usage:
  >>> from pythales.hsm import HSM
