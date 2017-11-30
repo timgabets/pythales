@@ -13,10 +13,24 @@ A primitive implementation of Thales HSM_ (hardware security module) simulator. 
 - HC - Generate a TMK, TPK or PVK
 - NC - Diagnostics information
 
-Usage:
- >>> from pythales.hsm import HSM
- >>> hsm = HSM(header='SSSS', debug=True, skip_parity=True)
- >>> hsm.run()
+Installation
+Install git and python3:
+ # apt-get install git python3 python3-pip
+
+Setup virtual environment for python3 (check the Manual_):
+ # mkvirtualenv pyenv -p /usr/bin/python3
+ # workon pyenv
+
+Check out the code and install requirements:
+ # git clone https://github.com/timgabets/pythales
+ # cd pythales
+ # workon pyenv
+ # pip3 install -r requirements.txt
+
+Run:
+ # cd examples/
+ # ./hsm_server.py --help
+ # ./hsm_server.py -h SSSS -d --skip-parity
  LMK: DEAFBEEDEAFBEEDEAFBEEDEAFBEEDEAF
  Firmware version: 0007-E000
  Message header: SSSS
@@ -72,3 +86,4 @@ You may also check examples_ for more sophisticated HSM server implementation wi
 
 .. _examples: https://github.com/timgabets/pythales/tree/master/examples
 .. _HSM: https://en.wikipedia.org/wiki/Hardware_security_module
+.. _Manual: https://virtualenvwrapper.readthedocs.io/en/latest/
