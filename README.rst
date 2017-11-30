@@ -14,7 +14,6 @@ A primitive implementation of Thales HSM_ (hardware security module) simulator. 
 - NC - Diagnostics information
 
 Installation
-
 Install git and python3:
  # apt-get install git python3 python3-pip
 
@@ -27,11 +26,17 @@ Check out the code and install requirements:
  # cd pythales
  # workon pyenv
  # pip3 install -r requirements.txt
+ 
 
 Run:
- # cd examples/
- # ./hsm_server.py --help
- # ./hsm_server.py -h SSSS -d --skip-parity
+ > cd examples/
+ > ./hsm_server.py --help
+ > ./hsm_server.py -h SSSS -d --skip-parity
+
+Usage:
+ >>> from pythales.hsm import HSM
+ >>> hsm = HSM(header='SSSS', debug=True, skip_parity=True)
+ >>> hsm.run()
  LMK: DEAFBEEDEAFBEEDEAFBEEDEAFBEEDEAF
  Firmware version: 0007-E000
  Message header: SSSS
