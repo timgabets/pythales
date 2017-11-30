@@ -19,12 +19,16 @@ Install git and python3:
 
 Setup virtual environment for python3 (check the Manual_):
  mkvirtualenv pyenv -p /usr/bin/python3
+ 
  workon pyenv
 
 Check out the code and install requirements:
  git clone https://github.com/timgabets/pythales
+ 
  cd pythales
+ 
  workon pyenv
+ 
  pip3 install -r requirements.txt
  
 
