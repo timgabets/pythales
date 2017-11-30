@@ -1,7 +1,7 @@
-pythales
-========
+# pythales
 
-A primitive implementation of Thales HSM_ (hardware security module) simulator. Only the basic (the most popular) HSM commands are implemented:
+
+A primitive implementation of [Thales HSM](https://en.wikipedia.org/wiki/Hardware_security_module) hardware security module) simulator. Only the basic (the most popular) HSM commands are implemented:
 
 - A0 - Generate a Key
 - BU - Generate a Key check value 
@@ -13,34 +13,37 @@ A primitive implementation of Thales HSM_ (hardware security module) simulator. 
 - HC - Generate a TMK, TPK or PVK
 - NC - Diagnostics information
 
-Installation
-Install git and python3:
- apt-get install git python3 python3-pip
+## Installation
 
-Setup virtual environment for python3 (check the Manual_):
- mkvirtualenv pyenv -p /usr/bin/python3
- 
- workon pyenv
+Install git and python3:
+```bash
+apt-get install git python3 python3-pip
+```
+
+Setup virtual environment for python3 (check the [Manual](https://virtualenvwrapper.readthedocs.io/en/latest/)):
+```bash
+mkvirtualenv pyenv -p /usr/bin/python3
+workon pyenv
+```
 
 Check out the code and install requirements:
- git clone https://github.com/timgabets/pythales
+```bash
+git clone https://github.com/timgabets/pythales
+cd pythales
+workon pyenv
+pip3 install -r requirements.txt
+```
  
- cd pythales
- 
- workon pyenv
- 
- pip3 install -r requirements.txt
- 
-
 Run:
- cd examples/
- ./hsm_server.py --help
- ./hsm_server.py -h SSSS -d --skip-parity
+```bash
+cd examples/
+./hsm_server.py --help # check the options
+./hsm_server.py -h SSSS -d --skip-parity
+```
 
-Usage:
- >>> from pythales.hsm import HSM
- >>> hsm = HSM(header='SSSS', debug=True, skip_parity=True)
- >>> hsm.run()
+Output example:
+```
+# ./hsm_server.py -h SSSS -d --skip-parity
  LMK: DEAFBEEDEAFBEEDEAFBEEDEAFBEEDEAF
  Firmware version: 0007-E000
  Message header: SSSS
@@ -91,9 +94,6 @@ Usage:
 	00 08 53 53 53 53 43 5a 30 30                           ..SSSSCZ00
 	[Response Code]: [CZ]
 	[Error Code   ]: [00]
+```
 
-You may also check examples_ for more sophisticated HSM server implementation with some features like command line options parsing etc. The application works as server that may simultaneously serve only one connected client.
-
-.. _examples: https://github.com/timgabets/pythales/tree/master/examples
-.. _HSM: https://en.wikipedia.org/wiki/Hardware_security_module
-.. _Manual: https://virtualenvwrapper.readthedocs.io/en/latest/
+You may also check [examples](https://github.com/timgabets/pythales/tree/master/examples) for more sophisticated HSM server implementation with some features like command line options parsing etc. The application works as server that may simultaneously serve only one connected client.

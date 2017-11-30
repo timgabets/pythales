@@ -1,4 +1,5 @@
 November 2017
+	0.75 README.rst -> README.md
 	0.74 Added help to ./hsm_server
   0.73 FA command support (translate a ZPK from ZMK to LMK)
 
